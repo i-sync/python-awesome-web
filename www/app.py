@@ -18,11 +18,11 @@ logging.basicConfig(level = logging.INFO)
 def init_jinja2(app, **kwargs):
     logging.info('init jinja2...')
     options = dict(
-        autoescape = kwargs.get('autoescape', True)
-        block_start_string = kwargs.get('block_start_string', '{%')
-        block_end_string = kwargs.get('blcok_end_string', '%}')
-        variable_start_string = kwargs.get('variable_start_string', '{{')
-        variable_end_string = kwargs.get('variable_end_string', '}}')
+        autoescape = kwargs.get('autoescape', True),
+        block_start_string = kwargs.get('block_start_string', '{%'),
+        block_end_string = kwargs.get('blcok_end_string', '%}'),
+        variable_start_string = kwargs.get('variable_start_string', '{{'),
+        variable_end_string = kwargs.get('variable_end_string', '}}'),
         auto_reload = kwargs.get('auto_reload', True)
     )
     path = kwargs.get('path', None)
@@ -99,7 +99,7 @@ def response_factory(app, handler):
         return res
     return response
 
-def datatime_filter(t):
+def datetime_filter(t):
     delta = int(time.time() - t)
     if delta < 60:
         return u'1分钟前'
@@ -107,19 +107,20 @@ def datatime_filter(t):
         return u'{}分钟前'.format(delta // 60)
     if delta < 86400:
         return u'{}小时前'.format(delta // 3600)
-    if delta < 604800：
+    if delta < 604800:
         return u'{}天前'.format(delta // 86400)
     dt = datetime.fromtimestamp(t)
     return u'{}年{}月{}日'.format(dt.year, dt.month, dt.day)
 
 
 
-def index(request):
-    return web.Response(body=b'<h1>Awesome Python3 Web</h1>', content_type='text/html')
+#def index(request):
+    #return web.Response(body=b'<h1>Awesome Python3 Web</h1>', content_type='text/html')
 
 @asyncio.coroutine
 def init(loop):
-    app = web.Application(loop = loop, host = '127.0.0.1', port = 3306, user = 'root', password = '123', database = 'awesome')
+    #app = web.Application(loop = loop, host = '127.0.0.1', port = 3306, user = 'root', password = '123', database = 'awesome')
+    yield from orm.create_pool(loop = loop, host = '127.0.0.1', port = 3306, user = 'root', password = '123', database = 'awesome')
     app = web.Application(loop = loop, middlewares = [
         logger_factory, response_factory
     ])

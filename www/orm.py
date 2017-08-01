@@ -37,7 +37,7 @@ def destory_pool():
 
 @asyncio.coroutine
 def select(sql, args, size = None):
-    logging.info(sql, args)
+    logging.info('SQL:{}\tARGS:{}'.format(sql, args))
     global __pool
     with (yield from __pool) as conn:
         cur = yield from conn.cursor(aiomysql.DictCursor)
