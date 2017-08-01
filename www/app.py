@@ -12,6 +12,7 @@ from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
 import orm
 from coreweb import add_routes, add_static
+from handlers import cookie2user, COOKIE_NAME
 
 logging.basicConfig(level = logging.INFO)
 
@@ -60,6 +61,23 @@ def data_factory(app, handler):
     return parse_data
 
 @asyncio.coroutine
+def auth_factory(app, handler):
+    @asyncio.coroutine
+    def auth(request):
+        logging.info('check user: {} {}'.format(request.method, request.path))
+        request.__user__ = None
+        cookie_str = request.cookies.get(COOKIE_NAME)
+        if cookie_str:
+            user = yield from cookie2user(cookie_str)
+            if user:
+                logging.info('set current user: {}'.format(user.email))
+                request.__user__ = user
+        if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
+            return web.HTTPFound('/signin')
+        return (yield from handler(request))
+    return auth
+
+@asyncio.coroutine
 def response_factory(app, handler):
     @asyncio.coroutine
     def response(request):
@@ -84,6 +102,7 @@ def response_factory(app, handler):
                 res.content_type = 'application/json;charset=utf-8'
                 return res
             else:
+                r['__user__'] = request.__user__
                 res = web.Response(body = app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 res.content_type = 'text/html;charset=utf-8'
                 return res
@@ -122,7 +141,7 @@ def init(loop):
     #app = web.Application(loop = loop, host = '127.0.0.1', port = 3306, user = 'root', password = '123', database = 'awesome')
     yield from orm.create_pool(loop = loop, host = '127.0.0.1', port = 3306, user = 'root', password = '123', database = 'awesome')
     app = web.Application(loop = loop, middlewares = [
-        logger_factory, response_factory
+        logger_factory, auth_factory, response_factory
     ])
     init_jinja2(app, filters = dict(datetime = datetime_filter))
     add_routes(app, 'handlers')
