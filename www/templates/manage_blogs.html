@@ -80,13 +80,13 @@
             <tbody>
                 <tr v-repeat = "blog: blogs">
                     <td>
-                        <a target="_blank" v-attr="href: '/blog/' + blog.id" v-text="blog.name"></a>
+                        <a target="_blank" v-attr="href: '/api/blogs/' + blog.id" v-text="blog.name + ' / ' + blog.summary"></a>
                     </td>
                     <td>
                         <a target="_blank" v-attr="href: '/user/' + blog.user_id" v-text="blog.user_name"></a>
                     </td>
                     <td>
-                        <span v-text="blog.create_at.toDateTime()"></span>
+                        <span v-text="blog.created_at.toDateTime()"></span>
                     </td>
                     <td>
                         <a href="#0" v-on="click: edit_blog(blog)"><i class="uk-icon-edit"></i> </a>
