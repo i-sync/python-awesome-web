@@ -217,10 +217,10 @@ class Model(dict, metaclass=ModelMetaclass):
             sql.append('limit')
             if isinstance(limit, int):
                 sql.append('?')
-                sql.append(limit)
+                args.append(limit)
             elif isinstance(limit, tuple) and len(limit) == 2:
                 sql.append('?, ?')
-                sql.extend(limit)
+                args.extend(limit)
             else:
                 raise ValueError('Invalid limit value: {}'.format(str(limit)))
 

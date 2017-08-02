@@ -7,7 +7,7 @@ Url Handlers
 
 import re, time, json, logging, hashlib, base64, asyncio
 
-from apis import APIValueError, APIError, APIPermissionError
+from apis import APIValueError, APIError, APIPermissionError, Page
 from coreweb import  get, post
 
 from models import User, Comment, Blog, next_id
@@ -23,6 +23,17 @@ _COOKIE_KEY = configs.session.secret
 def check_admin(request):
     if request.__user__ is None or not request.__user__.admin:
         raise APIPermissionError()
+
+
+def get_page_index(page_str):
+    p = 1
+    try:
+        p = int(page_str)
+    except ValueError as e:
+        pass
+    if p < 1:
+        p = 1
+    return p
 
 def user2cookie(user, max_age):
     '''
@@ -135,12 +146,27 @@ def manage_create_blog():
         'action': '/api/blogs'
     }
 
+@get('/manage/blogs')
+def manage_blogs(*, page = '1'):
+    return {
+        '__template__': 'manage_blogs.html',
+        'page_index': get_page_index(page)
+    }
 
 @get('/api/blogs/{id}')
 def api_get_blog(*, id):
     blog = yield from Blog.find(id)
     return blog
 
+@get('/api/blogs')
+def api_blogs(*, page = '1'):
+    page_index = get_page_index(page)
+    num = yield from Blog.find_number('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page = p, blogs = ())
+    blogs = yield from Blog.find_all(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, blogs=blogs)
 
 
 @post('/api/users')
