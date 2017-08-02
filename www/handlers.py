@@ -7,7 +7,7 @@ Url Handlers
 
 import re, time, json, logging, hashlib, base64, asyncio
 
-from apis import APIValueError, APIError
+from apis import APIValueError, APIError, APIPermissionError
 from coreweb import  get, post
 
 from models import User, Comment, Blog, next_id
@@ -18,6 +18,11 @@ _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$'
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
 COOKIE_NAME = 'awesome_session'
 _COOKIE_KEY = configs.session.secret
+
+
+def check_admin(request):
+    if request.__user__ is None or not request.__user__.admin:
+        raise APIPermissionError()
 
 def user2cookie(user, max_age):
     '''
@@ -121,6 +126,23 @@ def signout(request):
     logging.info('User signed out.')
     return r
 
+
+@get('/manage/blogs/create')
+def manage_create_blog():
+    return {
+        '__template__': 'manage_blog_edit.html',
+        'id': '',
+        'action': '/api/blogs'
+    }
+
+
+@get('/api/blogs/{id}')
+def api_get_blog(*, id):
+    blog = yield from Blog.find(id)
+    return blog
+
+
+
 @post('/api/users')
 def api_register_user(*, email, name, password):
     if not name or not name.strip():
@@ -172,9 +194,9 @@ def authenticate(*, email, password):
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
     return r
 
-@post('api/blogs')
+@post('/api/blogs')
 def api_create_blog(request, *, name, summary, content):
-    check_admin(request):
+    check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
     if not summary or not summary.strip():
