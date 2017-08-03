@@ -6,8 +6,9 @@ Url Handlers
 '''
 
 import re, time, json, logging, hashlib, base64, asyncio
+import markdown2
 
-from apis import APIValueError, APIError, APIPermissionError, Page
+from apis import APIValueError, APIError, APIResourceNotFoundError, APIPermissionError, Page
 from coreweb import  get, post
 
 from models import User, Comment, Blog, next_id
@@ -19,7 +20,9 @@ _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
 COOKIE_NAME = 'awesome_session'
 _COOKIE_KEY = configs.session.secret
 
-
+'''
+================== function ====================
+'''
 def check_admin(request):
     if request.__user__ is None or not request.__user__.admin:
         raise APIPermissionError()
@@ -80,6 +83,14 @@ def cookie2user(cookie_str):
         logging.exception(e)
         return None
 
+def text2html(text):
+    lines = map(lambda s: '<p>{}</p>'.format(s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')), filter(lambda s: s.strip() != '', text.split('\n')))
+    return ''.join(lines)
+
+'''
+====================== end function ====================
+'''
+
 '''
 @get('/')
 @asyncio.coroutine
@@ -91,18 +102,47 @@ def index(request):
     }
 '''
 
+
+'''
+===================== client page =======================
+'''
 @get('/')
-def blogs(request):
+def index(*, page = '1'):
+    '''
     summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
     blogs = [
         Blog(id='1', name='Test blog', summary = summary, created_at = time.time()-120),
         Blog(id='2', name='Javascript IT', summary = summary, created_at = time.time()-3600),
         Blog(id='3', name='Learn Swift', summary = summary, created_at = time.time()-7200),
     ]
+    '''
+    page_index = get_page_index(page)
+    num = yield from Blog.find_number('count(id)')
+    page = Page(num, page_index)
+    if num == 0:
+        blogs = []
+    else:
+        blogs = yield from Blog.find_all(order_by='created_at desc', limit=(page.offset, page.limit))
 
     return {
         '__template__': 'blogs.html',
+        'page': page,
         'blogs': blogs
+    }
+
+@get('/blog/{id}')
+def get_blog(id):
+    blog = yield from Blog.find(id)
+    if not blog:
+        raise APIValueError('id', 'can not find blog id is :{}'.format(id))
+    comments = yield from Comment.find_all('blog_id=?', [id], order_by='created_at desc')
+    for c in comments:
+        c.html_content = text2html(c.content)
+    blog.html_content = markdown2.markdown(blog.content)
+    return {
+        '__template__': 'blog.html',
+        'blog': blog,
+        'comments': comments
     }
 
 @get('/test')
@@ -110,12 +150,6 @@ def test(request):
     return web.Response(body=b'<h1>Awesome Python3 Web</h1>', content_type='text/html')
 
 
-@get('/api/users')
-def api_get_users():
-    users = yield from User.find_all(order_by='created_at desc')
-    for u in users:
-        u.password = '*' * 8
-    return dict(users = users)
 
 @get('/register')
 def register():
@@ -136,7 +170,13 @@ def signout(request):
     r.set_cookie(COOKIE_NAME, '-deleted-', max_age=0, httponly=True)
     logging.info('User signed out.')
     return r
+'''
+====================== end client page =====================
+'''
 
+'''
+====================== manage page =========================
+'''
 
 @get('/manage/blogs/create')
 def manage_create_blog():
@@ -151,7 +191,7 @@ def manage_edit_blog(*, id):
     return {
         '__template__': 'manage_blog_edit.html',
         'id': id,
-        'action': '/api/blogs/{}/edit'.format(id)
+        'action': '/api/blogs/{}'.format(id)
     }
 
 @get('/manage/blogs')
@@ -160,6 +200,22 @@ def manage_blogs(*, page = '1'):
         '__template__': 'manage_blogs.html',
         'page_index': get_page_index(page)
     }
+
+'''
+==================== end manage page =================
+'''
+
+
+'''
+==================== backend api ====================
+'''
+
+@get('/api/users')
+def api_get_users():
+    users = yield from User.find_all(order_by='created_at desc')
+    for u in users:
+        u.password = '*' * 8
+    return dict(users = users)
 
 @get('/api/blogs/{id}')
 def api_get_blog(*, id):
@@ -251,7 +307,7 @@ def api_delete_blog(request, *, id):
         return blog
     raise APIValueError('id', 'id can not find...')
     
-@post('/api/blogs/{id}/edit')
+@post('/api/blogs/{id}')
 def api_edit_blog(request, *, id, name, summary, content):
     check_admin(request)
     if not name or not name.strip():
@@ -269,3 +325,26 @@ def api_edit_blog(request, *, id, name, summary, content):
     blog.content = content
     yield from blog.update()
     return blog
+
+
+@post('/api/blogs/{id}/comments')
+def api_create_blog_comments(request, *, id, content):
+    '''create blog comments'''
+    if not request.__user__:
+        raise APIPermissionError('please login first.')
+
+    if not content or not content.strip():
+        raise APIValueError('content', 'content can not be empty.')
+
+    blog = yield from Blog.find(id)
+    if blog is None:
+        raise APIResourceNotFoundError('blog', 'can not find blog, id :{}'.format(id))
+
+    comment = Comment(blog_id = id, user_id= request.__user__.id, user_name = request.__user__.name, user_image = request.__user__.image, content = content.strip() )
+    yield from comment.save()
+    return comment
+
+
+'''
+==================== end backend api ====================
+'''
