@@ -119,17 +119,19 @@ def response_factory(app, handler):
     return response
 
 def datetime_filter(t):
+    date_time = datetime.fromtimestamp(t)
+    str_date = date_time.strftime("%Y-%m-%d %X")
     delta = int(time.time() - t)
     if delta < 60:
-        return u'1分钟前'
+        return u'<span title="{}">1分钟前</span>'.format(str_date)
     if delta < 3600:
-        return u'{}分钟前'.format(delta // 60)
+        return u'<span title="{}">{}分钟前</span>'.format(str_date, delta // 60)
     if delta < 86400:
-        return u'{}小时前'.format(delta // 3600)
+        return u'<span title="{}">{}小时前</span>'.format(str_date, delta // 3600)
     if delta < 604800:
-        return u'{}天前'.format(delta // 86400)
-    dt = datetime.fromtimestamp(t)
-    return u'{}年{}月{}日'.format(dt.year, dt.month, dt.day)
+        return u'<span title="{}">{}天前</span>'.format(str_date, delta // 86400)
+    #dt = datetime.fromtimestamp(t)
+    return u'<span title="{}">{}</span>'.format(str_date, date_time.strftime("%Y年%m月%d日"))
 
 
 
