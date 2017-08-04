@@ -201,6 +201,20 @@ def manage_blogs(*, page = '1'):
         'page_index': get_page_index(page)
     }
 
+@get('/manage/comments')
+def manage_comment(*, page = '1'):
+    return {
+        '__template__': 'manage_comments.html',
+        'page_index': get_page_index(page)
+    }
+
+@get('/manage/users')
+def manage_user(*, page = '1'):
+    return {
+        '__template__': 'manage_users.html',
+        'page_index': get_page_index(page)
+    }
+
 '''
 ==================== end manage page =================
 '''
@@ -211,11 +225,18 @@ def manage_blogs(*, page = '1'):
 '''
 
 @get('/api/users')
-def api_get_users():
-    users = yield from User.find_all(order_by='created_at desc')
+def api_get_users(request, *, page = '1'):
+    '''get all users'''
+    check_admin(request)
+    page_index = get_page_index(page)
+    num = yield from User.find_number('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page = p, users = ())
+    users = yield from User.find_all(order_by='created_at desc', limit = (p.offset, p.limit))
     for u in users:
         u.password = '*' * 8
-    return dict(users = users)
+    return dict(page = p, users = users)
 
 @get('/api/blogs/{id}')
 def api_get_blog(*, id):
@@ -342,6 +363,27 @@ def api_create_blog_comments(request, *, id, content):
 
     comment = Comment(blog_id = id, user_id= request.__user__.id, user_name = request.__user__.name, user_image = request.__user__.image, content = content.strip() )
     yield from comment.save()
+    return comment
+
+@get('/api/comments')
+def api_comments(*, page = '1'):
+    '''get all comments.'''
+    page_index = get_page_index(page)
+    num = yield from Comment.find_number('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page = p, comments = ())
+    comments = yield from Comment.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
+    return dict(page = p, comments = comments)
+
+@post('/api/comments/{comment_id}/delete')
+def api_delete_comments(request, *, comment_id):
+    '''delete comment.'''
+    check_admin(request)
+    comment = yield from Comment.find(comment_id)
+    if comment is None:
+        raise APIResourceNotFoundError('Comment', 'can not find comment, comment id: {}'.format(comment_id))
+    yield from comment.remove()
     return comment
 
 
