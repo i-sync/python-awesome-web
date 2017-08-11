@@ -17,8 +17,8 @@ from config import configs
 
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
-COOKIE_NAME = 'awesome_session'
-_COOKIE_KEY = configs.session.secret
+COOKIE_NAME = configs.cookie.name
+_COOKIE_KEY = configs.cookie.secret
 
 '''
 ================== function ====================
@@ -108,12 +108,15 @@ def index(request):
 '''
 @get('/')
 def index(*, page = '1'):
-    '''
+
     summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
     blogs = [
         Blog(id='1', name='Test blog', summary = summary, created_at = time.time()-120),
         Blog(id='2', name='Javascript IT', summary = summary, created_at = time.time()-3600),
         Blog(id='3', name='Learn Swift', summary = summary, created_at = time.time()-7200),
+        Blog(id='4', name='Test blog', summary = summary, created_at = time.time()-120),
+        Blog(id='5', name='Javascript IT', summary = summary, created_at = time.time()-3600),
+        Blog(id='6', name='Learn Swift', summary = summary, created_at = time.time()-7200),
     ]
     '''
     page_index = get_page_index(page)
@@ -123,10 +126,10 @@ def index(*, page = '1'):
         blogs = []
     else:
         blogs = yield from Blog.find_all(order_by='created_at desc', limit=(page.offset, page.limit))
-
+    '''
     return {
-        '__template__': 'blogs.html',
-        'page': page,
+        '__template__': 'test.html',
+        #'page': page,
         'blogs': blogs
     }
 
@@ -215,6 +218,22 @@ def manage_user(*, page = '1'):
         'page_index': get_page_index(page)
     }
 
+@get('/manage/category')
+def manage_category(*, page = '1'):
+    return {
+        '__template__': 'manage_category.html',
+        'page_index': get_page_index(page)
+    }
+
+
+@get('/manage/category/edit')
+def manage_edit_category(*, id):
+    return {
+        '__template__': 'manage_category_edit.html',
+        'id': id,
+        'action': '/api/category/{}'.format(id)
+    }
+
 '''
 ==================== end manage page =================
 '''
@@ -281,7 +300,7 @@ def api_register_user(*, email, name, password):
     return r
 
 @post('/api/authenticate')
-def authenticate(*, email, password):
+def authenticate(*, email, password, remember):
     if not email:
         raise APIValueError('email', 'Invalid Email')
     if not password:
@@ -299,7 +318,11 @@ def authenticate(*, email, password):
         raise APIValueError('password', 'Invalid Password.')
     # authenticate ok, set cookie
     r = web.Response()
-    r.set_cookie(COOKIE_NAME, user2cookie(user, 86400), max_age=86400, httponly=True)
+    if remember:
+        max_age = configs.cookie.max_age_long
+    else:
+        max_age = configs.cookie.max_age
+    r.set_cookie(COOKIE_NAME, user2cookie(user, max_age), max_age=max_age, httponly=True)
     user.password = '*' * 8
     r.content_type = 'application/json'
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')

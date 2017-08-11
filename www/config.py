@@ -5,7 +5,9 @@
 config.py
 '''
 
-import config_default
+#import config_default
+import os.path
+import json
 
 class Dict(dict):
     '''
@@ -46,12 +48,17 @@ def toDict(d):
         D[k] = toDict(v) if isinstance(v, dict) else v
     return D
 
-configs = config_default.configs
 
-try:
-    import config_override
-    configs = merge(configs, config_override.configs)
-except ImportError:
-    pass
+path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
+
+configs = None
+user = None
+with open('{}/config.json'.format(path)) as f:
+    configs = json.load(f)
+
+with open('{}/user.json'.format(path)) as f:
+    user = json.load(f)
+
+configs = merge(configs, user)
 
 configs = toDict(configs)

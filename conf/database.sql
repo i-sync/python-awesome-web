@@ -1,10 +1,10 @@
 -- schema.sql
 
-drop database if exists awesome;
+drop database if exists awesome_blog;
 
-create database awesome;
+create database awesome_blog;
 
-use awesome;
+use awesome_blog;
 
 -- grant select, insert, update, delete on awesome.* to 'www-data'@'localhost' identified by 'www-data';
 
@@ -29,6 +29,8 @@ create table blogs (
     `name` varchar(50) not null,
     `summary` varchar(200) not null,
     `content` mediumtext not null,
+    `category_id` varchar(50),
+    `category_name` varchar(50),
     `created_at` real not null,
     key `idx_created_at` (`created_at`),
     primary key (`id`)
@@ -44,4 +46,12 @@ create table comments (
     `created_at` real not null,
     key `idx_created_at` (`created_at`),
     primary key (`id`)
+) engine=innodb default charset=utf8;
+
+create table categories(
+  `id` varchar (50) not null,
+  `name` varchar(50) not null,
+  `created_at` real not null,
+  key `idx_created_at` (`created_at`),
+  primary key (`id`)
 ) engine=innodb default charset=utf8;

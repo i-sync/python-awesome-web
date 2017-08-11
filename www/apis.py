@@ -42,8 +42,9 @@ class APIPermissionError(APIError):
 
 class Page(object):
 
-    def __init__(self, item_count, page_index=1, page_size=10):
+    def __init__(self, item_count, page_index=1, page_size=10, page_show=10):
         self.item_count = item_count
+        self.page_show = page_show - 2 # remomve first and last page.
         self.page_size = page_size
         self.page_count = item_count // page_size + (1 if item_count % page_size > 0 else 0)
         if (item_count == 0) or (page_index > self.page_count):
@@ -59,6 +60,21 @@ class Page(object):
 
 
     def __str__(self):
-        return 'item_count: {}, page_count: {}, page_index: {}, page_size: {}, offset: {}, limit: {}'.format(self.item_count, self.page_count, self.page_index, self.page_size, self.offset, self.limit)
+        return 'item_count: {}, page_count: {}, page_index: {}, page_size: {}, page_show: {}, offset: {}, limit: {}'.format(self.item_count, self.page_count, self.page_index, self.page_size, self.page_show, self.offset, self.limit)
 
     __repr__ = __str__
+
+    def pagelist(self):
+        left = 2
+        right = self.page_count
+
+        if self.page_count > self.page_show:
+            left = self.page_index - self.page_show // 2
+            if left < 2:
+                left = 2
+            right = left + self.page_show
+            if right > self.page_count:
+                right = self.page_count
+                left = right - self.page_show
+
+        self.pagelist = list(range(left, right))

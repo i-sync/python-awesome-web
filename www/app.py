@@ -13,6 +13,7 @@ from jinja2 import Environment, FileSystemLoader
 import orm
 from coreweb import add_routes, add_static
 from handlers import cookie2user, COOKIE_NAME
+from config import configs
 
 logging.basicConfig(level = logging.INFO)
 
@@ -103,6 +104,7 @@ def response_factory(app, handler):
                 return res
             else:
                 r['__user__'] = request.__user__
+                r['web_meta'] = configs.web_meta
                 res = web.Response(body = app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 res.content_type = 'text/html;charset=utf-8'
                 return res

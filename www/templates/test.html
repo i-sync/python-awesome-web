@@ -1,14 +1,16 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8" />
-        <title>Test Users - Awesome Python Webapp</title>
-    </head>
+{% extends '__base__.html' %}
 
-    <body>
-        <h1>All Users</h1>
-        {% for u in users %}
-            <p>{{u.name}} / {{ u.email }} </p>
-        {% endfor %}
-    </body>
-</html>
+{% block title %} this is test page {% endblock %}
+
+
+{% block content %}
+
+{% for blog in blogs %}
+
+    <div class="ui segment">
+        <p>{{blog.name}}</p>
+        <p>{{blog.summary}}</p>
+    </div>
+{% endfor %}
+
+{% endblock %}

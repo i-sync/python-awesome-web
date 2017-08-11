@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # _*_ coding: utf-8 _*_
-
+'''
 import asyncio
 import orm
 from models import User, Blog, Comment
@@ -19,3 +19,17 @@ def test():
 
 loop.run_until_complete(test())
 loop.close()
+'''
+
+
+import os
+import os.path
+
+filename = __file__
+abspath = os.path.abspath(filename)
+path = os.path.dirname(abspath)
+configpath = os.path.join(path, 'config')
+print(filename)
+print(abspath)
+print(path)
+print(configpath)

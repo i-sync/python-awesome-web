@@ -29,6 +29,8 @@ class Blog(Model):
     user_id = StringField(ddl = 'varchar(50)')
     user_name = StringField(ddl = 'varchar(50)')
     user_image = StringField(ddl = 'varchar(500)')
+    category_id = StringField(ddl = 'varchar(50)')
+    category_name = StringField(ddl = 'varchar(50)')
     name = StringField(ddl = 'varchar(50)')
     summary = StringField(ddl = 'varchar(200)')
     content = TextField()
@@ -45,4 +47,10 @@ class Comment(Model):
     content = TextField()
     created_at = FloatField(default = time.time)
 
+class Category(Model):
+    __table__ = 'categories'
+
+    id = StringField(primary_key = True, default = next_id, ddl = 'varchar(50')
+    name = StringField(ddl = 'varchar(50)')
+    created_at = FloatField(default = time.time)
 

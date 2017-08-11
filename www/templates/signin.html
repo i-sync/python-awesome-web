@@ -1,15 +1,28 @@
 <!DOCTYPE html>
-<html class="uk-height-1-1">
+<html class="uk-height-1-1" xmlns:v-on="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
-    <title>登录 - Awesome Python Webapp</title>
-    <link rel="stylesheet" type="text/css" href="/static/css/uikit.min.css">
-    <link rel="stylesheet" type="text/css" href="/static/css/uikit.gradient.min.css">
-    <script src="/static/js/jquery.min.js"></script>
-    <script src="/static/js/sha1.min.js"></script>
-    <script src="/static/js/uikit.min.js"></script>
-    <script src="/static/js/vue.min.js"></script>
+    <title>登录 - Awesome Python Blog</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/semantic.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/awesome.css">
+
+    <script src="/static/js/jquery-3.2.1.js"></script>
+    <script src="/static/js/semantic.js"></script>
+    <script src="/static/js/sha256.js"></script>
+    <script src="/static/js/vue.js"></script>
     <script src="/static/js/awesome.js"></script>
+
+    <style>
+    body {
+      background-color: #DADADA;
+    }
+    body > .grid {
+      height: 100%;
+    }
+    .column {
+      max-width: 450px;
+    }
+    </style>
 
     <script>
 
@@ -23,7 +36,8 @@
                 el: '#vm',
                 data: {
                     email: '',
-                    password: ''
+                    password: '',
+                    remember:''
                 },
                 methods: {
                     submit: function (event) {
@@ -32,15 +46,16 @@
                         var email = this.email.trim().toLowerCase();
                         if(!validation_email(email))
                         {
-                            return $form.showFormError('请输入正确的Email地址');
+                            return $form.showFormError({message:'请输入正确的Email地址', data:'email'});
                         }
                         if(!this.password.trim())
                         {
-                            return $form.showFormError('请输入密码');
+                            return $form.showFormError({message:'请输入密码', data:'password'});
                         }
                         var data = {
                             email: email,
-                            password: this.password === '' ? '' : CryptoJS.SHA1(email + ':' + this.password).toString()
+                            password: this.password === '' ? '' : sha256(email + ':' + this.password).toString(),
+                            remember: this.remember
                         };
                         $form.postJSON('/api/authenticate', data, function (err, result) {
                             if(!err){
@@ -55,35 +70,47 @@
     </script>
 </head>
 
-<body class="uk-height-1-1">
-    <div class="uk-vertical-align uk-text-center uk-height-1-1">
-        <div class="uk-vertical-align-middle" styly="width: 320px">
-            <p><a href="/" class="uk-icon-button"><i class="uk-icon-html5"></i> </a><a href="/">Awesome Python Webapp</a> </p>
-            <form id="vm" v-on="submit: submit" class="uk-panel uk-panel-box uk-form">
-                <div class="uk-alert uk-alert-danger uk-hidden"></div>
-
-                <div class="uk-form-row">
-                    <div class="uk-form-icon uk-width-1-1">
-                        <i class="uk-icon-envelope-o"></i>
-                        <input v-model="email" name="email" type="text" placeholder="邮箱" maxlength="50" class="uk-width-1-1 uk-form-large"/>
-                    </div>
+<body>
+    <div class="ui middle aligned center aligned grid">
+        <div class="column">
+            <h2 class="ui teal header">
+                <div class="content">
+                    Awesome Python Blog
                 </div>
+            </h2>
 
-                <div class="uk-form-row">
-                    <div class="uk-form-icon uk-width-1-1">
-                        <i class="uk-icon-lock"></i>
-                        <input v-model="password" name="password" type="password" placeholder="密码" maxlength="50" class="uk-width-1-1 uk-form-large"/>
+            <form id="vm" v-on:submit="submit" class="ui large form">
+                <div class="ui segment">
+                    <div class="field">
+                        <div class="ui left icon input">
+                            <i class="user icon"></i>
+                            <input v-model="email" name="email" type="text" placeholder="Email Address" maxlength="50">
+                        </div>
                     </div>
-                </div>
+                    <div class="field">
+                        <div class="ui left icon input">
+                            <i class="lock icon"></i>
+                            <input v-model="password" name="password" type="password" placeholder="Password" maxlength="50">
+                        </div>
+                    </div>
+                    <div class="inline field">
+                        <button type="submit" class="ui large teal submit button">Login</button>
+                        <div class="ui toggle checkbox right">
+                            <input v-model="remember" type="checkbox" name="remember">
+                            <label>记住我</label>
+                        </div>
+                    </div>
 
-                <div class="uk-form-row">
-                    <button type="submit" class="uk-width-1-1 uk-button uk-button-primary uk-button-large">
-                        <i class="uk-icon-sign-in"></i>登录
-                    </button>
+                    <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
                 </div>
             </form>
+
+            <div class="ui message">
+                "New to us?" <a href="/register">Sign Up</a>
+            </div>
         </div>
     </div>
+
 </body>
 
 </html>

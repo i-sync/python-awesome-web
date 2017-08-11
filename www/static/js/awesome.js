@@ -224,57 +224,61 @@ $(function () {
             return this.each(function () {
                 var
                     $form = $(this),
-                    $alert = $form && $form.find('.uk-alert-danger'),
+                    $alert = $form && $form.find('.ui.error.message ul li'),
                     fieldName = err && err.data;
                 if (! $form.is('form')) {
                     console.error('Cannot call showFormError() on non-form object.');
                     return;
                 }
-                $form.find('input').removeClass('uk-form-danger');
-                $form.find('select').removeClass('uk-form-danger');
-                $form.find('textarea').removeClass('uk-form-danger');
+                $form.find('input').closest('.field').removeClass('error');
+                $form.find('select').closest('.field').removeClass('error');
+                $form.find('textarea').closest('.field').removeClass('error');
                 if ($alert.length === 0) {
-                    console.warn('Cannot find .uk-alert-danger element.');
+                    console.warn('Cannot find .ui.error.message element.');
                     return;
                 }
                 if (err) {
-                    $alert.text(err.message ? err.message : (err.error ? err.error : err)).removeClass('uk-hidden').show();
+                    $alert.text(err.message ? err.message : (err.error ? err.error : err));///.removeClass('uk-hidden').show();
                     if (($alert.offset().top - 60) < $(window).scrollTop()) {
                         $('html,body').animate({ scrollTop: $alert.offset().top - 60 });
                     }
                     if (fieldName) {
-                        $form.find('[name=' + fieldName + ']').addClass('uk-form-danger');
+                        $form.find('[name=' + fieldName + ']').closest('.field').addClass('error');
                     }
+
+                    $form.removeClass('success').addClass('error');
                 }
                 else {
-                    $alert.addClass('uk-hidden').hide();
-                    $form.find('.uk-form-danger').removeClass('uk-form-danger');
+                    //$alert.addClass('uk-hidden').hide();
+                    $form.removeClass('error').addClass('success');
                 }
             });
         },
         showFormLoading: function (isLoading) {
             return this.each(function () {
                 var
-                    $form = $(this),
-                    $submit = $form && $form.find('button[type=submit]'),
-                    $buttons = $form && $form.find('button');
-                    $i = $submit && $submit.find('i'),
-                    iconClass = $i && $i.attr('class');
+                    $form = $(this);
+                    //$submit = $form && $form.find('button[type=submit]'),
+                    //$buttons = $form && $form.find('button');
+                    //$i = $submit && $submit.find('i'),
+                    //iconClass = $i && $i.attr('class');
                 if (! $form.is('form')) {
                     console.error('Cannot call showFormLoading() on non-form object.');
                     return;
                 }
-                if (!iconClass || iconClass.indexOf('uk-icon') < 0) {
+                /*if (!iconClass || iconClass.indexOf('uk-icon') < 0) {
                     console.warn('Icon <i class="uk-icon-*>" not found.');
                     return;
-                }
+                }*/
                 if (isLoading) {
-                    $buttons.attr('disabled', 'disabled');
-                    $i && $i.addClass('uk-icon-spinner').addClass('uk-icon-spin');
+                    //$buttons.attr('disabled', 'disabled');
+                    //$i && $i.addClass('uk-icon-spinner').addClass('uk-icon-spin');
+                    $form.addClass('loading');
                 }
                 else {
-                    $buttons.removeAttr('disabled');
-                    $i && $i.removeClass('uk-icon-spinner').removeClass('uk-icon-spin');
+                    //$buttons.removeAttr('disabled');
+                    //$i && $i.removeClass('uk-icon-spinner').removeClass('uk-icon-spin');
+                    $form.removeClass('loading');
                 }
             });
         },
