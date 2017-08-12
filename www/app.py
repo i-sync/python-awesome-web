@@ -12,7 +12,7 @@ from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
 import orm
 from coreweb import add_routes, add_static
-from handlers import cookie2user, COOKIE_NAME
+from handlers import cookie2user, COOKIE_NAME, get_category
 from config import configs
 
 logging.basicConfig(level = logging.INFO)
@@ -105,6 +105,7 @@ def response_factory(app, handler):
             else:
                 r['__user__'] = request.__user__
                 r['web_meta'] = configs.web_meta
+                r['category'] = yield from get_category()
                 res = web.Response(body = app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 res.content_type = 'text/html;charset=utf-8'
                 return res
@@ -143,7 +144,7 @@ def datetime_filter(t):
 @asyncio.coroutine
 def init(loop):
     #app = web.Application(loop = loop, host = '127.0.0.1', port = 3306, user = 'root', password = '123', database = 'awesome')
-    yield from orm.create_pool(loop = loop, host = '127.0.0.1', port = 3306, user = 'root', password = '123', database = 'awesome')
+    yield from orm.create_pool(loop = loop, **configs.database)
     app = web.Application(loop = loop, middlewares = [
         logger_factory, auth_factory, response_factory
     ])

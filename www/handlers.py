@@ -11,12 +11,12 @@ import markdown2
 from apis import APIValueError, APIError, APIResourceNotFoundError, APIPermissionError, Page
 from coreweb import  get, post
 
-from models import User, Comment, Blog, next_id
+from models import User, Comment, Blog, Category, next_id
 from aiohttp import web
 from config import configs
 
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
-_RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
+_RE_SHA256 = re.compile(r'^[0-9a-f]{64}$')
 COOKIE_NAME = configs.cookie.name
 _COOKIE_KEY = configs.cookie.secret
 
@@ -86,6 +86,11 @@ def cookie2user(cookie_str):
 def text2html(text):
     lines = map(lambda s: '<p>{}</p>'.format(s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')), filter(lambda s: s.strip() != '', text.split('\n')))
     return ''.join(lines)
+
+@asyncio.coroutine
+def get_category():
+    category = yield from Category.find_all(order_by='created_at desc')
+    return category
 
 '''
 ====================== end function ====================
@@ -329,7 +334,7 @@ def authenticate(*, email, password, remember):
     return r
 
 @post('/api/blogs')
-def api_create_blog(request, *, name, summary, content):
+def api_create_blog(request, *, name, summary, content, category_id):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
@@ -352,7 +357,7 @@ def api_delete_blog(request, *, id):
     raise APIValueError('id', 'id can not find...')
     
 @post('/api/blogs/{id}')
-def api_edit_blog(request, *, id, name, summary, content):
+def api_edit_blog(request, *, id, name, summary, content, category_id):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')

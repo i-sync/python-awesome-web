@@ -56,9 +56,9 @@
                 {% if __user__ %}
                     <a class="item">{{ __user__.name }}</a>
                     {% if __user__.admin %}
-                        <a href="/manage/blog" class="item">管理</a>
+                        <a href="/manage/blogs" class="item">管理</a>
                     {% endif %}
-                    <a href="/logout" class="item">登出</a>
+                    <a href="/signout" class="item">登出</a>
                 {% else %}
                     <a href="/signin" class="item"> 登录</a>
                     <a href="/register" class="item">注册</a>
@@ -71,15 +71,35 @@
 
     <div class="ui main container">
         <div class="ui grid">
-            <div class="ui diving right rail">
-                <div class="ui sticky center">
-                    <img class="ui circular image" src="{{ web_meta.logo }}">
+            <div class="twelve wide column">
+                {% block content %} {% endblock %}
+            </div>
+            <div class="four wide column">
+                <div class="ui segment center aligned">
+                    <img class="ui centered circular image" src="{{ web_meta.logo }}">
                     <h4>{{ web_meta.web_name }}</h4>
                     <p>{{ web_meta.welcome_message }}</p>
                 </div>
-            </div>
-            {% block content %} {% endblock %}
 
+                <div class="ui segment">
+                    <h3>Categories</h3>
+                    <div class="ui list">
+                        {% for c in category %}
+                        <a href="/category/{{ c.id }}" class="item"> {{c.name}}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="ui segment">
+                    <h3>友情链接</h3>
+                    <div class="ui list">
+                        <a target="_blank" href="#" class="item"> github</a>
+                        <a target="_blank" href="#" class="item"> github</a>
+                        <a target="_blank" href="#" class="item"> github</a>
+                        <a target="_blank" href="#" class="item"> github</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

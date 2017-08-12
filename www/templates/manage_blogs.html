@@ -7,6 +7,7 @@
 <script>
     function initVM(data) {
         var vm = new Vue({
+            delimiters:['${', '}'],
             el: '#vm',
             data: {
                 blogs: data.blogs,
@@ -49,16 +50,51 @@
 
 {% block content %}
 
-    <div class="uk-width-1-1 uk-margin-bottom">
-        <div class="uk-panel uk-panel-box">
-            <ul class="uk-breadcrumb">
-                <li><a href="/manage/comments">评论</a> </li>
-                <li class="uk-active"><span>日志</span></li>
-                <li><a href="/manage/users">用户</a> </li>
-            </ul>
-        </div>
+    <div class="ui secondary menu">
+        <a class="item" href="/manage/comments">评论</a>
+        <a class="item active" >日志</a>
+        <a class="item" href="/manage/users">用户</a>
+        <a class="item" href="/manage/categories">类别</a>
     </div>
 
+    <div id="vm" class="ui segment">
+        <a href="/manage/blogs/create" class="ui button"><i class="plus icon"></i> 新日志 </a>
+        <table class="ui celled table">
+            <thead>
+                <tr>
+                    <th class="eight wide">标题 / 摘要</th>
+                    <th class="two wide">作者</th>
+                    <th class="two wide">类别</th>
+                    <th class="two wide">创建时间</th>
+                    <th class="two wide">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr v-for = "blog in blogs">
+                    <td>
+                        <a target="_blank" v-bind:href="'/blog/' + blog.id">${blog.name + ' / ' + blog.summary}</a>
+                    </td>
+                    <td>
+                        <a target="_blank" v-bind:href="'/user/' + blog.user_id">${blog.user_name}</a>
+                    </td>
+                    <td>
+                        <span>${blog.category_name}</span>
+                    </td>
+                    <td>
+                        <span>${blog.created_at.toDateTime()}</span>
+                    </td>
+                    <td>
+                        <a href="#0" v-on:click="edit_blog(blog)"><i class="edit icon"></i> </a>
+                        <a href="#0" v-on:click="delete_blog(blog)"><i class="delete icon"></i> </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+
+    </div>
+
+    <!--
     <div class="uk-width-1-1" id="error"></div>
 
     <div id="loading" class="uk-width-1-1 uk-text-center">
@@ -98,6 +134,7 @@
 
         <div v-component="pagination" v-with="page"></div>
     </div>
+    -->
 
 
 {% endblock %}

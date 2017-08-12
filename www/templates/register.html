@@ -24,23 +24,23 @@
                     event.preventDefault();
                     var $form = $("#vm");
                     if(! this.name.trim()){
-                        return $form.showFormError('请输入名字');
+                        return $form.showFormError({message:'请输入名字', data:'name'});
                     }
                     if(! validation_email(this.email.trim().toLowerCase())){
-                        return $form.showFormError('请输入正确的Email地址');
+                        return $form.showFormError({message:'请输入正确的Email地址', data:'name'});
                     }
                     if(this.password1.length < 6){
-                        return $form.showFormError('密码长度至少为6字符');
+                        return $form.showFormError({message:'密码长度至少为6字符', data:'name'});
                     }
                     if(this.password1 !== this.password2){
-                        return $form.showFormError('两次输入密码不一致');
+                        return $form.showFormError({message:'两次输入密码不一致', data:'name'});
                     }
                     
                     var email = this.email.trim().toLowerCase();
                     $form.postJSON('/api/users',{
                         name: this.name.trim(),
                         email: email,
-                        password: CryptoJS.SHA1(email + ':' + this.password1).toString()
+                        password: sha256(email + ':' + this.password1).toString()
                     }, function (err, r) {
                         if(err){
                             return $form.showFormError(err);
@@ -60,42 +60,32 @@
 
 {% block content %}
 
-    <div class="uk-width-2-3">
+    <div class="ui segment">
         <h1>欢迎注册!</h1>
-        <form id="vm" v-on="submit: submit" class="uk-form uk-form-stacked">
-            <div class="uk-alert uk-alert-danger uk-hidden"></div>
-            <div class="uk-form-row">
-                <label class="uk-form-label">名字:</label>
-                <div class="uk-form-controls">
-                    <input v-model="name" type="text" maxlength="50" placeholder="名字" class="uk-width-1-1">
-                </div>
+
+        <form id="vm" v-on:submit="submit" class="ui form">
+            <div class="field">
+                <label>名字:</label>
+                <input v-model="name" type="text" name="name" maxlength="50" placeholder="名字">
+            </div>
+            <div class="field">
+                <label>邮箱:</label>
+                <input v-model="email" type="email" name="email"  maxlength="50" placeholder="邮箱">
+            </div>
+            <div class="field">
+                <label>输入密码:</label>
+                <input v-model="password1" type="password" name="password1"  maxlength="50" placeholder="输入密码">
+            </div>
+            <div class="field">
+                <label>重复密码:</label>
+                <input v-model="password2" type="password" name="password2"  maxlength="50" placeholder="重复密码">
             </div>
 
-            <div class="uk-form-row">
-                <label class="uk-form-label">邮箱:</label>
-                <div class="uk-form-controls">
-                    <input v-model="email" type="text" maxlength="50" placeholder="邮箱" class="uk-width-1-1">
-                </div>
-            </div>
+            <button class="ui button" type="submit">注册</button>
 
-            <div class="uk-form-row">
-                <label class="uk-form-label">输入密码:</label>
-                <div class="uk-form-controls">
-                    <input v-model="password1" type="password" maxlength="50" placeholder="输入密码" class="uk-width-1-1">
-                </div>
-            </div>
-
-            <div class="uk-form-row">
-                <label class="uk-form-label">重复密码:</label>
-                <div class="uk-form-controls">
-                    <input v-model="password2" type="password" maxlength="50" placeholder="重复密码" class="uk-width-1-1">
-                </div>
-            </div>
-
-            <div class="uk-form-row">
-                <button type="submit" class="uk-button uk-button-primary"><i class="uk-icon-user"></i> 注册</button>
-            </div>
+            <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
         </form>
+
     </div>
 
 {% endblock %}
