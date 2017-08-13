@@ -16,7 +16,7 @@ class MyFileSystemEventHandler(FileSystemEventHandler):
         self.restart = fn
     
     def on_any_event(self, event):
-        if event.src_path.endswith('.py'):
+        if event.src_path.endswith('.py') or event.src_path.endswith('.json'):
             log('Python source file changed: {}'.format(event.src_path))
             self.restart()
 
@@ -66,4 +66,5 @@ if __name__ == '__main__':
 
     command = argv
     path = os.path.abspath('.')
+    print('path:{}'.format(path))
     start_watch(path, None)

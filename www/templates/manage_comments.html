@@ -8,6 +8,7 @@
     function initVM(data){
         $('#vm').show();
         var vm = new Vue({
+            delimiters: ['${', '}'],
             el: '#vm',
             data: {
                 comments: data.comments,
@@ -46,14 +47,11 @@
 
 {% block content %}
 
-    <div class="uk-width-1-1 uk-margin-bottom">
-        <div class="uk-panel uk-panel-box">
-            <ul class="uk-breadcrumb">
-                <li class="uk-active"><span>评论</span></li>
-                <li><a href="/manage/blogs">日志</a></li>
-                <li><a href="/manage/users">用户</a></li>
-            </ul>
-        </div>
+     <div class="ui secondary menu">
+        <a class="item active">评论</a>
+        <a class="item" href="/manage/blogs">日志</a>
+        <a class="item" href="/manage/users">用户</a>
+        <a class="item" href="/manage/categories">类别</a>
     </div>
 
     <div id="error" class="uk-width-1-1"></div>
@@ -62,36 +60,37 @@
         <span><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i> 正在加载... </span>
     </div>
 
-    <div id="vm" class="uk-width-1-1" style="display: none">
-        <table class="uk-table uk-table-hover">
+    <div id="vm" class="ui container">
+        <table class="ui celled table">
             <thead>
                 <tr>
-                    <th class="uk-width-2-10">作者</th>
-                    <th class="uk-width-5-10">内容</th>
-                    <th class="uk-width-2-10">创建时间</th>
-                    <th class="uk-width-1-10">操作</th>
+                    <th class="two wide">作者</th>
+                    <th class="nine wide">内容</th>
+                    <th class="three wide">创建时间</th>
+                    <th class="two wide">操作</th>
                 </tr>
             </thead>
             <tbody>
-                <tr v-repeat="comment: comments">
+                <tr v-for="comment in comments">
                     <td>
-                        <span v-text="comment.user_name"></span>
+                        <a target="_blank" v-bind:href="'/user/'+ comment.user_id"> <span>${comment.user_name}</span></a>
                     </td>
                     <td>
-                        <span v-text="comment.content"></span>
+                        <a target="_blank" v-bind:href="'/blog/'+ comment.blog_id + '#' + comment.id"> <span>${comment.content}</span></a>
                     </td>
                     <td>
-                        <span v-text="comment.created_at.toDateTime()"></span>
+                        <span>${comment.created_at.toDateTime()}</span>
                     </td>
                     <td>
-                        <a href="#0" v-on="click: delete_comment(comment)"><i class="uk-icon-trash-o"></i>
-                        </a>
+                        <a href="#0" v-on:click="delete_comment(comment)"><i class="trash icon"></i></a>
                     </td>
                 </tr>
             </tbody>
         </table>
 
-        <div v-component="pagination" v-with="page"></div>
+        <!--div v-component="pagination" v-with="page"></div-->
+        
+        <div is="vc-pagination" v-bind:p="page"></div>
     </div>
 
 {% endblock %}

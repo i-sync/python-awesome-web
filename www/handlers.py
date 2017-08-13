@@ -88,9 +88,9 @@ def text2html(text):
     return ''.join(lines)
 
 @asyncio.coroutine
-def get_category():
-    category = yield from Category.find_all(order_by='created_at desc')
-    return category
+def get_categories():
+    categories = yield from Category.find_all(order_by='created_at desc')
+    return categories
 
 '''
 ====================== end function ====================
@@ -113,7 +113,7 @@ def index(request):
 '''
 @get('/')
 def index(*, page = '1'):
-
+    '''
     summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
     blogs = [
         Blog(id='1', name='Test blog', summary = summary, created_at = time.time()-120),
@@ -131,10 +131,9 @@ def index(*, page = '1'):
         blogs = []
     else:
         blogs = yield from Blog.find_all(order_by='created_at desc', limit=(page.offset, page.limit))
-    '''
     return {
-        '__template__': 'test.html',
-        #'page': page,
+        '__template__': 'blogs.html',
+        'page': page,
         'blogs': blogs
     }
 
@@ -210,7 +209,7 @@ def manage_blogs(*, page = '1'):
     }
 
 @get('/manage/comments')
-def manage_comment(*, page = '1'):
+def manage_comments(*, page = '1'):
     return {
         '__template__': 'manage_comments.html',
         'page_index': get_page_index(page)
@@ -223,20 +222,27 @@ def manage_user(*, page = '1'):
         'page_index': get_page_index(page)
     }
 
-@get('/manage/category')
+@get('/manage/categories')
 def manage_category(*, page = '1'):
     return {
-        '__template__': 'manage_category.html',
+        '__template__': 'manage_categories.html',
         'page_index': get_page_index(page)
     }
 
-
-@get('/manage/category/edit')
-def manage_edit_category(*, id):
+@get('/manage/categories/create')
+def manage_create_categories():
+    return {
+        '__template__': 'manage_category_edit.html',
+        'id': '',
+        'action': '/api/categories'
+    }
+    
+@get('/manage/categories/edit')
+def manage_edit_categories(*, id):
     return {
         '__template__': 'manage_category_edit.html',
         'id': id,
-        'action': '/api/category/{}'.format(id)
+        'action': '/api/categories/{}'.format(id)
     }
 
 '''
@@ -261,22 +267,6 @@ def api_get_users(request, *, page = '1'):
     for u in users:
         u.password = '*' * 8
     return dict(page = p, users = users)
-
-@get('/api/blogs/{id}')
-def api_get_blog(*, id):
-    blog = yield from Blog.find(id)
-    return blog
-
-@get('/api/blogs')
-def api_blogs(*, page = '1'):
-    page_index = get_page_index(page)
-    num = yield from Blog.find_number('count(id)')
-    p = Page(num, page_index)
-    if num == 0:
-        return dict(page = p, blogs = ())
-    blogs = yield from Blog.find_all(orderBy='created_at desc', limit=(p.offset, p.limit))
-    return dict(page=p, blogs=blogs)
-
 
 @post('/api/users')
 def api_register_user(*, email, name, password):
@@ -333,6 +323,22 @@ def authenticate(*, email, password, remember):
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
     return r
 
+'''-----------blogs------------'''
+@get('/api/blogs/{id}')
+def api_get_blog(*, id):
+    blog = yield from Blog.find(id)
+    return blog
+
+@get('/api/blogs')
+def api_blogs(*, page = '1'):
+    page_index = get_page_index(page)
+    num = yield from Blog.find_number('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page = p, blogs = ())
+    blogs = yield from Blog.find_all(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, blogs=blogs)
+
 @post('/api/blogs')
 def api_create_blog(request, *, name, summary, content, category_id):
     check_admin(request)
@@ -342,7 +348,12 @@ def api_create_blog(request, *, name, summary, content, category_id):
         raise APIValueError('summary', 'summary can not be empty')
     if not content or not content.strip():
         raise APIValueError('content', 'content can not be empty')
-    blog = Blog(user_id = request.__user__.id, user_name= request.__user__.name, user_image = request.__user__.image, name = name.strip(), summary = summary.strip(), content = content.strip())
+    
+    category = yield from Category.find(category_id)
+    if not category:
+        raise APIValueError('category', 'can not find category, category_id:{}'.format(category_id))
+
+    blog = Blog(user_id = request.__user__.id, user_name= request.__user__.name, user_image = request.__user__.image, category_id = category.id, category_name = category.name, name = name.strip(), summary = summary.strip(), content = content.strip())
     yield from blog.save()
     return blog
 
@@ -369,13 +380,19 @@ def api_edit_blog(request, *, id, name, summary, content, category_id):
     blog = yield from Blog.find(id)
     if not blog:
         raise APIValueError('id', 'request path error, id : {}'.format(id))
+
+    category = yield from Category.find(category_id)
+    if not category:
+        raise APIValueError('category', 'can not find category, category_id:{}'.format(category_id))
     blog.name = name
     blog.summary = summary
     blog.content = content
+    blog.category_id = category_id
+    blog.category_name = category.name
     yield from blog.update()
     return blog
 
-
+'''-----------comments-----------'''
 @post('/api/blogs/{id}/comments')
 def api_create_blog_comments(request, *, id, content):
     '''create blog comments'''
@@ -414,6 +431,55 @@ def api_delete_comments(request, *, comment_id):
     yield from comment.remove()
     return comment
 
+
+'''-----------categories-----------'''
+@get('/api/categories')
+def api_categories(*, page = '1'):
+    '''get all categories.'''
+    page_index = get_page_index(page)
+    num = yield from Category.find_number('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page = p, categories = ())
+    categories = yield from Category.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
+    return dict(page = p, categories = categories)
+
+@post('/api/categories')
+def api_create_category(request, *, name):
+    check_admin(request)
+    if not name or not name.strip():
+        raise APIValueError('name', 'name can not be empty')
+    category = Category(name = name)
+    yield from category.save()
+    return category
+
+@get('/api/categories/{id}')
+def api_get_category(request, *, id):
+    category = yield from Category.find(id)
+    return category
+
+@post('/api/categories/{id}')
+def api_edit_category(request, *, id, name):
+    check_admin(request)
+    if not name or not name.strip():
+        raise APIValueError('name', 'name can not be empty')
+    
+    category = yield from Category.find(id)
+    if not category:
+        raise APIValueError('category', 'category can not be find, id:{}'.format(id))
+    category.name = name
+    yield from category.update()
+    return category
+
+@post('/api/categories/{id}/delete')
+def api_delete_category(request, *, id):
+    logging.info('delete category id: {}'.format(id))
+    check_admin(request)
+    category = yield from Category.find(id)
+    if category:
+        yield from category.remove()
+        return category
+    raise APIValueError('id', 'id can not find...')
 
 '''
 ==================== end backend api ====================

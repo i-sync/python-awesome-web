@@ -7,6 +7,7 @@ JSON API definition.
 '''
 
 import json, logging, inspect, functools
+from config import configs
 
 class APIError(Exception):
     '''
@@ -42,7 +43,7 @@ class APIPermissionError(APIError):
 
 class Page(object):
 
-    def __init__(self, item_count, page_index=1, page_size=10, page_show=10):
+    def __init__(self, item_count, page_index=1, page_size=configs.page_size, page_show=configs.page_show):
         self.item_count = item_count
         self.page_show = page_show - 2 # remomve first and last page.
         self.page_size = page_size
@@ -57,6 +58,7 @@ class Page(object):
             self.limit = self.page_size
         self.has_next = self.page_index < self.page_count
         self.has_prev = self.page_index > 1
+        self.pagelist()
 
 
     def __str__(self):
@@ -77,4 +79,4 @@ class Page(object):
                 right = self.page_count
                 left = right - self.page_show
 
-        self.pagelist = list(range(left, right))
+        self.page_list = list(range(left, right))

@@ -7,21 +7,21 @@
 <script>
     var ID = '{{ id }}';
     var action = '{{ action }}';
-    function initVM(blog){
+    function initVM(category){
         var vm = new Vue({
             el: '#vm',
-            data: blog,
+            data: category,
             methods: {
                 submit: function (event){
                     event.preventDefault();
-                    var $form = $('#vm').find('form');
+                    var $form = $('#vm');
                     $form.postJSON(action, this.$data, function(err, r){
                         if(err){
                             $form.showFormError(err);
                         }
                         else {
                             //return location.assign('/api/blogs/' + r.id);
-                            return location.assign('/manage/blogs');
+                            return location.assign('/manage/categories');
                         }
                     });
                 }
@@ -32,20 +32,18 @@
 
     $(function(){
         if(ID){
-            getJSON('/api/blogs/' + ID, function(err, blog){
+            getJSON('/api/categories/' + ID, function(err, category){
                 if(err){
                     return fatal(err);
                 }
                 $('#loading').hide();
-                initVM(blog);
+                initVM(category);
             });
         }
         else {
             $('#loading').hide();
             initVM({
-                name: '',
-                summary: '',
-                content: ''
+                name: ''
             });
         }
     });
@@ -53,50 +51,25 @@
 {% endblock %}
 
 {% block content %}
-    <div class="uk-width-1-1 uk-margin-bottom">
-        <div class="uk-panel uk-panel-box">
-            <ul class="uk-breadcrumb">
-                <li><a href="/manage/comments">评论</a> </li>
-                <li><a href="/manage/blogs">日志</a> </li>
-                <li><a href="/manage/users">用户</a> </li>
-            </ul>
-        </div>
+
+    <div class="ui secondary menu">
+        <a class="item" href="/manage/comments">评论</a>
+        <a class="item" href="/manage/blogs">日志</a>
+        <a class="item" href="/manage/users">用户</a>
+        <a class="item active">类别</a>
     </div>
 
-    <div id="error" class="uk-width-1-1"></div>
-
-    <div id="loading" class="uk-width-1-1 uk-text-center">
-        <span><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i> 正在加载... </span>
-    </div>
-
-    <div id="vm" class="uk-width-2-3">
-        <form v-on="submit: submit" class="uk-form uk-form-stacked">
-            <div class="uk-alert uk-alert-danger uk-hidden"></div>
-            <div class="uk-form-row">
-                <label class="uk-form-label">标题:</label>
-                <div class="uk-form-controls">
-                    <input v-model="name" name="name" type="text" placeholder="标题" class="uk-width-1-1">
-                </div>
+    <div class="ui segment">
+        <form id="vm" v-on:submit="submit" class="ui form">
+            <div class="field">
+                <label>名称:</label>
+                <input v-model="name" type="text" name="name" placeholder="标题">
             </div>
-
-            <div class="uk-form-row">
-                <label class="uk-form-label">摘要:</label>
-                <div class="uk-form-controls">
-                    <textarea v-model="summary" rows="4" name="summary" placeholder="摘要" class="uk-width-1-1" style="resize: none;"></textarea>
-                </div>
+            <div class="field">
+                <button class="ui primary button" type="submit"><i class="checkmark icon"></i>保存</button>
+                <a href="/manage/categories" class="ui button"><i class="remove icon"></i>取消</a>
             </div>
-
-            <div class="uk-form-row">
-                <label class="uk-form-label">内容:</label>
-                <div class="uk-form-controls">
-                    <textarea v-model="content" rows="16" name="content" placeholder="内容" class="uk-width-1-1" style="resize: none;"></textarea>
-                </div>
-            </div>
-
-            <div class="uk-form-row">
-                <button type="submit" class="uk-button uk-button-primary"><i class="uk-icon-save"></i> 保存 </button>
-                <a href="/manage/blogs" class="uk-button"><i class="uk-icon-times"></i> 取消 </a>
-            </div>
+            <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
         </form>
     </div>
 

@@ -72,8 +72,8 @@
                 <label>类别:</label>
                 <select v-model="category_id" class="ui search dropdown">
                     <option value="">Category</option>
-                    {% for c in category %}
-                    <option value="{{c.id}}">{{c.name}}</option>
+                    {% for category in categories %}
+                    <option value="{{category.id}}">{{category.name}}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -86,8 +86,8 @@
                 <textarea v-model="content" name="content" placeholder="内容"></textarea>
             </div>
             <div class="field">
-                <button class="ui button" type="submit">保存</button>
-                <a href="/manage/blogs" class="ui button">取消</a>
+                <button class="ui primary button" type="submit"><i class="checkmark icon"></i>保存</button>
+                <a href="/manage/blogs" class="ui button"><i class="remove icon"></i>取消</a>
             </div>
             <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
         </form>

@@ -58,11 +58,11 @@
     </div>
 
     <div id="vm" class="ui segment">
-        <a href="/manage/blogs/create" class="ui button"><i class="plus icon"></i> 新日志 </a>
+        <a href="/manage/blogs/create" class="ui primary button"><i class="plus icon"></i> 新日志 </a>
         <table class="ui celled table">
             <thead>
                 <tr>
-                    <th class="eight wide">标题 / 摘要</th>
+                    <th class="eight wide">标题</th>
                     <th class="two wide">作者</th>
                     <th class="two wide">类别</th>
                     <th class="two wide">创建时间</th>
@@ -72,7 +72,7 @@
             <tbody>
                 <tr v-for = "blog in blogs">
                     <td>
-                        <a target="_blank" v-bind:href="'/blog/' + blog.id">${blog.name + ' / ' + blog.summary}</a>
+                        <a target="_blank" v-bind:href="'/blog/' + blog.id">${blog.name}</a>
                     </td>
                     <td>
                         <a target="_blank" v-bind:href="'/user/' + blog.user_id">${blog.user_name}</a>
@@ -85,13 +85,14 @@
                     </td>
                     <td>
                         <a href="#0" v-on:click="edit_blog(blog)"><i class="edit icon"></i> </a>
-                        <a href="#0" v-on:click="delete_blog(blog)"><i class="delete icon"></i> </a>
+                        <a href="#0" v-on:click="delete_blog(blog)"><i class="remove icon"></i> </a>
                     </td>
                 </tr>
             </tbody>
         </table>
 
-
+        
+        <div is="vc-pagination" v-bind:p="page"></div>
     </div>
 
     <!--

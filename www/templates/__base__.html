@@ -1,21 +1,54 @@
 <!DOCTYPE html>
-<!--
+
 {% macro pagination(url, page) %}
-    <ul class="uk-pagination">
+    <div class="ui pagination menu">
         {% if page.has_prev %}
-            <li><a href="{{ url }}{{ page.page_index - 1 }}"><i class="uk-icon-angle-double-left"></i></a></li>
+            <a class="item" href="{{ url }}{{ page.page_index - 1 }}"><i class="angle double left icon"></i></a>
         {% else %}
-            <li class="uk-disabled"><span><i class="uk-icon-angle-double-left"></i></span></li>
+            <a class="disabled item"><i class="angle double left icon"></i></a>
         {% endif %}
-            <li class="uk-active"><span>{{ page.page_index }}</span></li>
+
+
+        {% if page.page_index == 1 %}
+            <a class="disabled item">1</a>
+        {% else %}
+            <a class="item" href="{{ url }}{{ 1 }}">1</a>
+        {% endif %}
+
+        {% if page.page_list %}
+            {% if page.page_list[0] > 2 %}
+                <a class="disabled item">...</a>
+            {% endif %}
+
+            {% for pl in page.page_list %}
+                {% if pl == page.page_index %}
+                    <a class="disabled item">{{ page.page_index }}</a>
+                {% else %}
+                    <a class="item" href="{{ url }}{{ pl }}">{{ pl }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page.page_list[-1] < (page.page_count-1) %}                
+                <a class="disabled item">...</a>
+            {% endif %}
+        {% endif %}
+
+        {% if page.page_count > 1 %}
+            {% if page.page_index == page.page_count %}
+                    <a class="disabled item">{{ page.page_index }}</a>
+            {% else %}
+                <a class="item" href="{{ url }}{{ page.page_count }}">{{ page.page_count }}</a>
+            {% endif %}
+        {% endif %}
+
         {% if page.has_next %}
-            <li><a href="{{ url }}{{ page.page_index + 1 }}"><i class="uk-icon-angle-double-right"></i></a></li>
+            <a class="item" href="{{ url }}{{ page.page_index + 1 }}"><i class="angle double right icon"></i></a>
         {% else %}
-            <li class="uk-disabled"><span><i class="uk-icon-angle-double-right"></i></span></li>
+            <a class="disabled item"><i class="angle double right icon"></i></a>
         {% endif %}
-    </ul>
+    </div>
 {% endmacro %}
--->
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -84,8 +117,8 @@
                 <div class="ui segment">
                     <h3>Categories</h3>
                     <div class="ui list">
-                        {% for c in category %}
-                        <a href="/category/{{ c.id }}" class="item"> {{c.name}}</a>
+                        {% for category in categories %}
+                        <a href="/category/{{ category.id }}" class="item"> {{category.name}}</a>
                         {% endfor %}
                     </div>
                 </div>

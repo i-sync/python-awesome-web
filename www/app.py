@@ -12,7 +12,7 @@ from aiohttp import web
 from jinja2 import Environment, FileSystemLoader
 import orm
 from coreweb import add_routes, add_static
-from handlers import cookie2user, COOKIE_NAME, get_category
+from handlers import cookie2user, COOKIE_NAME, get_categories
 from config import configs
 
 logging.basicConfig(level = logging.INFO)
@@ -105,7 +105,7 @@ def response_factory(app, handler):
             else:
                 r['__user__'] = request.__user__
                 r['web_meta'] = configs.web_meta
-                r['category'] = yield from get_category()
+                r['categories'] = yield from get_categories()
                 res = web.Response(body = app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 res.content_type = 'text/html;charset=utf-8'
                 return res

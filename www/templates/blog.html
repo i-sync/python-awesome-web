@@ -13,7 +13,7 @@
             $form.showFormError('');
             var content = $form.find('textarea').val().trim();
             if(content === ''){
-                return $form.showFormError('请输入评论内容！');
+                return $form.showFormError({message:'请输入评论内容！', data:'content'});
             }
             $form.postJSON(comment_url, {content : content}, function(err, result){
                 if(err){
@@ -28,76 +28,69 @@
 
 {% block content %}
 
-    <div class="uk-width-medium-3-4">
-        <article class="uk-article">
-            <h2>{{ blog.name }}</h2>
-            <p class="uk-article-meta">发表于{{ blog.created_at|datetime|safe }}</p>
-            <p>{{ blog.html_content|safe }}</p>
-        </article>
-
-        <hr class="uk-article-divider">
+    <div class="ui container">
+        <!--iv class="ui text container"-->
+        <h2>{{ blog.name }}</h2>
+        <div class="ui comments">
+            <div class="comment">
+                <div class="metadata">
+                    由<a href="/user/{{blog.user_id}}">{{blog.user_name}}</a> 发表于{{ blog.created_at|datetime|safe }}
+                    文章分类:<a href="/category/{{blog.category_id}}">{{blog.category_name}}</a>
+                </div>
+            </div>
+        </div>
+        <p>{{ blog.html_content|safe }}</p>
+        <!--/div-->
 
         {% if __user__ %}
-        <h3>发表评论</h3>
-
-        <article class="uk-comment">
-            <header class="uk-comment-header">
-                <img class="uk-comment-avatar uk-border-circle" width="50" height="50" src="{{ __user__.image }}">
-                <h4 class="uk-comment-title">{{ __user__.name }}</h4>
-            </header>
-            <div class="uk-comment-body">
-                <form id="form-comment" class="uk-form">
-                    <div class="uk-alert uk-alert-danger uk-hidden"></div>
-                    <div class="uk-form-row">
-                        <textarea rows="6" placeholder="说点什么吧" style="width: 100%; resize: none;"></textarea>
-                    </div>
-                    <div class="uk-form-row">
-                        <button type="submit" class="uk-button uk-button-primary"><i class="uk-icon-comment"></i> 发表评论</button>
-                    </div>
-                </form>
+        <h3 class="ui dividing header">发表评论</h3>
+        
+        <h4 class="ui header">
+            <img class="ui image" src="{{ __user__.image }}">
+            <div class="content">
+                {{__user__.name}}
             </div>
-        </article>
+        </h4>
 
-        <hr class="uk-article-divider">
+         <form  id="form-comment" class="ui reply form">
+            <div class="field">
+                <textarea name="content"></textarea>
+            </div>
+            <button type="submit" class="ui blue labeled submit icon button">
+                <i class="icon edit"></i> 发表评论
+            </button>
+
+            <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
+        </form>
+        
         {% endif %}
 
-        <h3>最新评论</h3>
+        <div class="ui comments">
+            
+            <h3 class="ui dividing header">最新评论</h3>
 
-        <ul class="uk-comment-list">
+
             {% for comment in comments %}
-            <li>
-                <article class="uk-comment">
-                    <header class="uk-commet-header">
-                        <img class="uk-comment-avatar uk-border-circle" width="50" height="50" src="{{ comment.user_image }}">
-                        <h4 class="uk-comment-title">{{ comment.user_name }} {% if comment.user_id == blog.user_id %}(作者){% endif %}</h4>
-                        <p class="uk-comment-meta">{{ comment.created_at|datetime|safe }}</p>
-                    </header>
-                    <div class="uk-comment-body">
+            <div class="comment">
+                <a class="avatar">
+                    <img src="{{ comment.user_image }}">
+                </a>
+                <div class="content" id="{{comment.id}}">
+                    <a class="author">{{ comment.user_name }} {% if comment.user_id == blog.user_id %}(作者){% endif %}</a>
+                    <div class="metadata">
+                        <span class="date">{{ comment.created_at|datetime|safe }}</span>
+                    </div>
+                    <div class="text">
                         {{ comment.html_content|safe }}
                     </div>
-                </article>
-            </li>
+                    <!--div class="actions">
+                        <a class="reply">Reply</a>
+                    </div-->
+                </div>
+            </div>
             {% else %}
             <p>还没有人评论，抢个沙发吧...</p>
             {% endfor %}
-        </ul>
-    </div>
-
-    <div class="uk-width-medium-1-4">
-        <div class="uk-panel uk-panel-box">
-            <div class="uk-text-center">
-                <img class="uk-border-circle" width="120" height="120" src="{{ blog.user_image }}">
-                <h3>{{ blog.user_name }}</h3>
-            </div>
-        </div>
-        <div class="uk-panel uk-panel-header">
-            <h3 class="uk-panel-title">友情链接</h3>
-            <ul class="uk-list uk-list-line">
-                <li><i class="uk-icon-link"></i><a href="#">编程</a></li>
-                <li><i class="uk-icon-link"></i><a href="#">思考</a></li>
-                <li><i class="uk-icon-link"></i><a href="#">读书</a></li>
-            </ul>
         </div>
     </div>
-
 {% endblock %}
