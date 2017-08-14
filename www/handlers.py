@@ -126,11 +126,12 @@ def index(*, page = '1'):
     '''
     page_index = get_page_index(page)
     num = yield from Blog.find_number('count(id)')
+    num -= 1 # remove about page : name="__about__"
     page = Page(num, page_index)
-    if num == 0:
+    if num <= 0:
         blogs = []
     else:
-        blogs = yield from Blog.find_all(order_by='created_at desc', limit=(page.offset, page.limit))
+        blogs = yield from Blog.find_all(where='name!=?', args=['__about__'], order_by='created_at desc', limit=(page.offset, page.limit))
         for blog in blogs:
             blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks'])
             comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
@@ -217,6 +218,29 @@ def get_category_blogs(request, *, id, page='1'):
         'blogs': blogs,
         'category': category
     }
+
+@get('/about')
+def get_about():
+    about = yield from Blog.find_all(where='name=?', args=['__about__'])
+    if len(about) == 0:
+        raise APIResourceNotFoundError('about', 'can not find about page.')
+
+    comments = yield from Comment.find_all('blog_id=?', [about[0].id], order_by='created_at desc')
+    for c in comments:
+        c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks'])
+
+    about[0].html_content = markdown2.markdown(about[0].content, extras = ['code-friendly', 'fenced-code-blocks'])
+    about[0].view_count += 1
+    yield from about[0].update()
+
+
+    return {
+        '__template__': 'about.html',
+        'blog': about[0],
+        'comments': comments
+    }
+
+
 '''
 ====================== end client page =====================
 '''
@@ -390,10 +414,14 @@ def api_create_blog(request, *, name, summary, content, category_id):
         raise APIValueError('content', 'content can not be empty')
     
     category = yield from Category.find(category_id)
-    if not category:
-        raise APIValueError('category', 'can not find category, category_id:{}'.format(category_id))
+    if category:
+        #raise APIValueError('category', 'can not find category, category_id:{}'.format(category_id))
+        category_id= category.id
+        category_name = category.name
+    else:
+        category_name =''
 
-    blog = Blog(user_id = request.__user__.id, user_name= request.__user__.name, user_image = request.__user__.image, category_id = category.id, category_name = category.name, name = name.strip(), summary = summary.strip(), content = content.strip())
+    blog = Blog(user_id = request.__user__.id, user_name= request.__user__.name, user_image = request.__user__.image, category_id = category_id, category_name = category_name, name = name.strip(), summary = summary.strip(), content = content.strip())
     yield from blog.save()
     return blog
 

@@ -1,0 +1,85 @@
+{% extends '__base__.html' %}
+{% block title %}关于本站{% endblock %}
+{% block beforehead %}
+<script>
+    var comment_url = '/api/blogs/{{ blog.id }}/comments';
+
+    $(function(){
+        var $form = $('#form-comment');
+        $form.submit(function(e){
+            e.preventDefault();
+            $form.showFormError('');
+            var content = $form.find('textarea').val().trim();
+            if(content === ''){
+                return $form.showFormError({message:'请输入评论内容！', data:'content'});
+            }
+            $form.postJSON(comment_url, {content : content}, function(err, result){
+                if(err){
+                    return $form.showFormError(err);
+                }
+                refresh();
+            });
+        })
+    })
+</script>
+{% endblock %}
+
+{% block content %}
+    <!-- blog -->
+    <div class="ui segment">
+        <h1 class="ui header">关于本站</h1>
+        <p>{{ blog.html_content|safe }}</p>
+    </div>
+
+    {% if __user__ %}
+        <h3 class="ui dividing header">发表评论</h3>
+
+        <h4 class="ui header">
+            <img class="ui image" src="{{ __user__.image }}">
+            <div class="content">
+                {{__user__.name}}
+            </div>
+        </h4>
+
+         <form  id="form-comment" class="ui reply form">
+            <div class="field">
+                <textarea name="content"></textarea>
+            </div>
+            <button type="submit" class="ui blue labeled submit icon button">
+                <i class="icon edit"></i> 发表评论
+            </button>
+
+            <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
+         </form>
+
+    {% endif %}
+
+    <div class="ui comments">
+
+        <h3 class="ui dividing header">最新评论</h3>
+
+
+        {% for comment in comments %}
+        <div class="comment">
+            <a class="avatar">
+                <img src="{{ comment.user_image }}">
+            </a>
+            <div class="content" id="{{comment.id}}">
+                <a class="author">{{ comment.user_name }} {% if comment.user_id == blog.user_id %}(作者){% endif %}</a>
+                <div class="metadata">
+                    <span class="date">{{ comment.created_at|datetime|safe }}</span>
+                </div>
+                <div class="text">
+                    {{ comment.html_content|safe }}
+                </div>
+                <!--div class="actions">
+                    <a class="reply">Reply</a>
+                </div-->
+            </div>
+        </div>
+        {% else %}
+        <p>还没有人评论，抢个沙发吧...</p>
+        {% endfor %}
+    </div>
+    <!-- end blog -->
+{% endblock %}
