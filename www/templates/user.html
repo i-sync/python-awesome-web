@@ -1,0 +1,118 @@
+{% extends '__base__.html' %}
+
+{% block title %} 用户信息 {% endblock%}
+
+{% block beforehead %}
+    {% if __user__ and __user__.id == user_info.id %}
+    <script>
+        $(function () {
+            var vm = new Vue({
+                delimiters: ['${', '}'],
+                el: '#vm',
+                data: {
+                    'show': false,
+                    'password0': '',
+                    'password1': '',
+                    'password2': '',
+                },
+                methods:{
+                    toggle: function () {
+                        this.show = !this.show;
+                    },
+                    submit: function (event) {
+                        event.preventDefault();
+                        var $form = $("#vm").find("form");
+                        if(this.password0.length < 6){
+                            return $form.showFormError({message:'旧密码长度至少为6字符', data:'password0'});
+                        }
+                        if(this.password1.length < 6){
+                            return $form.showFormError({message:'新密码长度至少为6字符', data:'password1'});
+                        }
+                        if(this.password1 !== this.password2){
+                            return $form.showFormError({message:'两次输入密码不一致', data:'password2'});
+                        }
+
+                        $form.postJSON('/api/modify_password',{
+                            password0: sha256('{{__user__.email }}:' + this.password0).toString(),
+                            password1: sha256('{{__user__.email }}:' + this.password1).toString()
+                        }, function (err, r) {
+                            if(err){
+                                return $form.showFormError(err);
+                            }
+                            alert('密码修改成功, 请重新登录.')
+                            return location.assign('/signout');
+                        });
+                    }
+                }
+            })
+        })
+    </script>
+    {% endif %}
+
+{% endblock %}
+
+
+{% block content %}
+
+    <div class="ui segment">
+
+        <h3 class="ui dividing header">用户信息</h3>
+        <div class="ui grid">
+            <div class="doubling two row">
+                <div class="eight wide column">用户名:</div>
+                <div class="eight wide column">
+                    {{user_info.name}}
+                    {% if user_info.admin %}
+                        <span style="color:#d05"><i class="privacy icon"></i> 管理员</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="doubling two row">
+                <div class="eight wide column">头像:</div>
+                <div class="eight wide column">
+                    <img class="ui tiny image" src="{{user_info.image}}">
+                </div>
+            </div>
+            <div class="doubling two row">
+                <div class="eight wide column">Email:</div>
+                <div class="eight wide column">
+                    <a href="mailto:{{user_info.email}}"> {{user_info.email}}</a>
+                </div>
+            </div>
+            <div class="doubling two row">
+                <div class="eight wide column">注册时间:</div>
+                <div class="eight wide column">
+                    {{user_info.created_at| datetime | safe}}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {% if __user__ and __user__.id == user_info.id %}
+    <div id="vm" class="ui container">
+        <button class="ui button" v-on:click="toggle"><i class="edit icon"></i> 修改密码 </button>
+        <div v-if="show" class="ui segment">
+            <form v-on:submit="submit" class="ui form">
+                <div class="field">
+                    <label>旧密码:</label>
+                    <input v-model="password0" type="password" name="password0"  maxlength="50" placeholder="旧密码">
+                </div>
+                <div class="field">
+                    <label>新密码:</label>
+                    <input v-model="password1" type="password" name="password1"  maxlength="50" placeholder="输入密码">
+                </div>
+                <div class="field">
+                    <label>重复密码:</label>
+                    <input v-model="password2" type="password" name="password2"  maxlength="50" placeholder="重复密码">
+                </div>
+
+                <button class="ui primary button" type="submit">修改密码</button>
+
+                <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+{% endblock %}

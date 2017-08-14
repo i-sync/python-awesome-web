@@ -131,6 +131,10 @@ def index(*, page = '1'):
         blogs = []
     else:
         blogs = yield from Blog.find_all(order_by='created_at desc', limit=(page.offset, page.limit))
+        for blog in blogs:
+            blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks'])
+            comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
+            blog.comments_count = comments_count
     return {
         '__template__': 'blogs.html',
         'page': page,
@@ -142,10 +146,12 @@ def get_blog(id):
     blog = yield from Blog.find(id)
     if not blog:
         raise APIValueError('id', 'can not find blog id is :{}'.format(id))
+    blog.view_count += 1
+    yield from blog.update()
     comments = yield from Comment.find_all('blog_id=?', [id], order_by='created_at desc')
     for c in comments:
-        c.html_content = text2html(c.content)
-    blog.html_content = markdown2.markdown(blog.content)
+        c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks'])
+    blog.html_content = markdown2.markdown(blog.content, extras=['code-friendly', 'fenced-code-blocks'])
     return {
         '__template__': 'blog.html',
         'blog': blog,
@@ -177,6 +183,40 @@ def signout(request):
     r.set_cookie(COOKIE_NAME, '-deleted-', max_age=0, httponly=True)
     logging.info('User signed out.')
     return r
+
+@get('/user/{id}')
+def get_user(*, id):
+    user = yield from User.find(id)
+    if not user:
+        raise APIValueError('id', 'can not find user, id:{}'.format(id))
+    return {
+        '__template__': 'user.html',
+        'user_info': user
+    }
+
+@get('/category/{id}')
+def get_category_blogs(request, *, id, page='1'):
+    category = yield  from Category.find(id)
+    if not category:
+        raise APIValueError('category id', 'can not find category, by id:{}'.format(id))
+
+    page_index = get_page_index(page)
+    num = yield from Blog.find_number('count(id)', 'category_id=?', [id])
+    page = Page(num, page_index)
+    if num == 0:
+        blogs = []
+    else:
+        blogs = yield from Blog.find_all(where='category_id=?',args=[id], order_by='created_at desc', limit=(page.offset, page.limit))
+        for blog in blogs:
+            blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks'])
+            comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
+            blog.comments_count = comments_count
+    return {
+        '__template__': 'category.html',
+        'page': page,
+        'blogs': blogs,
+        'category': category
+    }
 '''
 ====================== end client page =====================
 '''
@@ -274,7 +314,7 @@ def api_register_user(*, email, name, password):
         raise APIValueError('name')
     if not email or not _RE_EMAIL.match(email):
         raise APIValueError('email')
-    if not password or not _RE_SHA1.match(password):
+    if not password or not _RE_SHA256.match(password):
         raise APIValueError('password')
 
     users = yield from User.find_all('email=?', [email])
@@ -308,7 +348,7 @@ def authenticate(*, email, password, remember):
 
     #check password
     sha1_password = '{}:{}'.format(user.id, password)
-    logging.info('login password:{}, sha1_password:{}'.format(password, sha1_password))
+    #logging.info('login password:{}, sha1_password:{}'.format(password, sha1_password))
     if user.password != hashlib.sha1(sha1_password.encode('utf-8')).hexdigest():
         raise APIValueError('password', 'Invalid Password.')
     # authenticate ok, set cookie
@@ -481,6 +521,31 @@ def api_delete_category(request, *, id):
         return category
     raise APIValueError('id', 'id can not find...')
 
+@post('/api/modify_password')
+def api_modify_password(request, *, password0, password1):
+    #check_admin(request)
+    if request.__user__ is None:
+        raise APIPermissionError('You must login first!')
+    if not password0 or not password0.strip():
+        raise APIValueError('password0', 'old password can not be empty.')
+    if not password1 or not _RE_SHA256.match(password1):
+        raise APIValueError('password1', 'Invalid new password.')
+
+    user = yield from User.find(request.__user__.id)
+    if user is None:
+        raise APIResourceNotFoundError('User not found')
+
+    # check password
+    sha1_password0 = '{}:{}'.format(user.id, password0)
+    if user.password != hashlib.sha1(sha1_password0.encode('utf-8')).hexdigest():
+        raise APIValueError('password0', 'Invalid Old Password.')
+
+    #set new password
+    sha1_password1 = '{}:{}'.format(user.id, password1)
+    user.password = hashlib.sha1(sha1_password1.encode('utf-8')).hexdigest()
+    yield from user.update()
+
+    return dict(user_id=user.id)
 '''
 ==================== end backend api ====================
 '''

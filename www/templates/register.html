@@ -27,13 +27,13 @@
                         return $form.showFormError({message:'请输入名字', data:'name'});
                     }
                     if(! validation_email(this.email.trim().toLowerCase())){
-                        return $form.showFormError({message:'请输入正确的Email地址', data:'name'});
+                        return $form.showFormError({message:'请输入正确的Email地址', data:'email'});
                     }
                     if(this.password1.length < 6){
-                        return $form.showFormError({message:'密码长度至少为6字符', data:'name'});
+                        return $form.showFormError({message:'密码长度至少为6字符', data:'password1'});
                     }
                     if(this.password1 !== this.password2){
-                        return $form.showFormError({message:'两次输入密码不一致', data:'name'});
+                        return $form.showFormError({message:'两次输入密码不一致', data:'password2'});
                     }
                     
                     var email = this.email.trim().toLowerCase();
@@ -81,7 +81,7 @@
                 <input v-model="password2" type="password" name="password2"  maxlength="50" placeholder="重复密码">
             </div>
 
-            <button class="ui button" type="submit">注册</button>
+            <button class="ui primary button" type="submit">注册</button>
 
             <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
         </form>

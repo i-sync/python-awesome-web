@@ -87,7 +87,7 @@
 
             <div class="right menu">
                 {% if __user__ %}
-                    <a class="item">{{ __user__.name }}</a>
+                    <a class="item" href="/user/{{__user__.id}}">{{ __user__.name }}</a>
                     {% if __user__.admin %}
                         <a href="/manage/blogs" class="item">管理</a>
                     {% endif %}

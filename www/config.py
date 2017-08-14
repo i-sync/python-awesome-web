@@ -53,10 +53,10 @@ path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config')
 
 configs = None
 user = None
-with open('{}/config.json'.format(path)) as f:
+with open('{}/config.json'.format(path), encoding='utf-8') as f:
     configs = json.load(f)
 
-with open('{}/user.json'.format(path)) as f:
+with open('{}/user.json'.format(path), encoding='utf-8') as f:
     user = json.load(f)
 
 configs = merge(configs, user)

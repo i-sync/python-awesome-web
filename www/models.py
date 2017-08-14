@@ -5,7 +5,7 @@
 import time
 import uuid
 
-from orm import Model, StringField, BooleanField, FloatField, TextField
+from orm import Model, StringField, BooleanField, FloatField, TextField, IntegerField
 
 def next_id():
     return '%015d%s000' % (int(time.time() * 1000), uuid.uuid4().hex)
@@ -31,8 +31,9 @@ class Blog(Model):
     user_image = StringField(ddl = 'varchar(500)')
     category_id = StringField(ddl = 'varchar(50)')
     category_name = StringField(ddl = 'varchar(50)')
+    view_count = IntegerField()
     name = StringField(ddl = 'varchar(50)')
-    summary = StringField(ddl = 'varchar(200)')
+    summary = StringField(ddl = 'varchar(2048)')
     content = TextField()
     created_at = FloatField(default = time.time)
 

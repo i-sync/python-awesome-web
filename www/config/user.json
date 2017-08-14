@@ -19,7 +19,7 @@
     "secret": "awesome-blog-u33oxrl1e6",
     "max_age": 86400
   },
-  "page_size": 1,
+  "page_size": 10,
   "page_show": 5,
   "use_disqus": true,
   "email": {
