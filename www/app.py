@@ -152,7 +152,7 @@ def init(loop):
     add_routes(app, 'handlers')
     add_static(app)
     #app.router.add_route('GET', '/', index)
-    srv = yield from loop.create_server(app.make_handler(), '::', 8080)
+    srv = yield from loop.create_server(app.make_handler(), 'localhost', 8080)
     logging.info('Server started at http://127.0.0.1:8080...')
     return srv
 

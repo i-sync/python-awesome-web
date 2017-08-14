@@ -516,3 +516,32 @@ function error(err) {
 function fatal(err) {
     _display_error($('#loading'), err);
 }
+
+/* the textarea can capture the tab key. */
+function captureTab(e) {
+    if(e.keyCode === 9) { // tab was pressed
+        var target = e.target;
+        // get caret position/selection
+        var start = target.selectionStart;
+        var end = target.selectionEnd;
+
+        var value = target.value;
+
+        // set textarea value to: text before caret + tab + text after caret
+        target.value = value.substring(0, start)
+                    + "\t"
+                    + value.substring(end);
+
+        // put caret at right position again (add one for the tab)
+        target.selectionStart = target.selectionEnd = start + 1;
+
+        // prevent the focus lose
+        e.preventDefault();
+    }
+}
+
+$(function(){
+    document.querySelectorAll("textarea").forEach(function(textarea){
+        textarea.addEventListener('keydown',captureTab, false);
+    });
+});

@@ -24,7 +24,8 @@
                             return location.assign('/manage/blogs');
                         }
                     });
-                }
+                },
+                captureTab: captureTab
             }
         });
         $('#vm').show();
@@ -79,11 +80,11 @@
             </div>
             <div class="field">
                 <label>摘要:</label>
-                <textarea v-model="summary" rows="2" name="summary" placeholder="摘要" ></textarea>
+                <textarea v-model="summary" v-on:keydown="captureTab" rows="2" name="summary" placeholder="摘要" ></textarea>
             </div>
             <div class="field">
                 <label>内容:</label>
-                <textarea v-model="content" name="content" placeholder="内容"></textarea>
+                <textarea v-model="content" v-on:keydown="captureTab" name="content" placeholder="内容"></textarea>
             </div>
             <div class="field">
                 <button class="ui primary button" type="submit"><i class="checkmark icon"></i>保存</button>
