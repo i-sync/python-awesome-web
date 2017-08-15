@@ -34,63 +34,89 @@
         <span class="ui metadata">
             由<a href="/user/{{blog.user_id}}">{{blog.user_name}}</a> 发表于 {{ blog.created_at|datetime|safe }} |
             文章分类:<a href="/category/{{blog.category_id}}">{{blog.category_name}}</a> |
-            <i class="unhide icon"></i> {{blog.view_count}} 次阅读 |
-            <i class="comment icon"></i> {{ comments | length }} 条评论
+            <i class="unhide icon"></i> {{blog.view_count}} 次阅读
+            <!--<i class="comment icon"></i> {{ comments | length }} 条评论-->
         </span>
         <div class="ui hidden divider"></div>
 
         <p>{{ blog.html_content | safe }}</p>
+
+        <div class="ui hidden divider"></div>
         <!--/div-->
+        {% if web_meta.use_disqus %}
+            <div class="ui divider"></div>
+            <div id="disqus_thread"></div>
+            <script>
 
-        {% if __user__ %}
-        <h3 class="ui dividing header">发表评论</h3>
-        
-        <h4 class="ui header">
-            <img class="ui image" src="{{ __user__.image }}">
-            <div class="content">
-                {{__user__.name}}
-            </div>
-        </h4>
+                /**
+                *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+                *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
 
-         <form  id="form-comment" class="ui reply form">
-            <div class="field">
-                <textarea name="content"></textarea>
-            </div>
-            <button type="submit" class="ui blue labeled submit icon button">
-                <i class="icon edit"></i> 发表评论
-            </button>
+                var disqus_config = function () {
+                    this.page.url = '{{web_meta.base_url}}/blog/{{blog.id}}';  // Replace PAGE_URL with your page's canonical URL variable
+                    this.page.identifier = '{{blog.id}}'; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+                };
 
-            <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
-        </form>
-        
-        {% endif %}
+                (function() { // DON'T EDIT BELOW THIS LINE
+                var d = document, s = d.createElement('script');
+                s.src = '//awesome-blog-1.disqus.com/embed.js';
+                s.setAttribute('data-timestamp', +new Date());
+                (d.head || d.body).appendChild(s);
+                })();
+            </script>
+            <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+        {% else %}
+            {% if __user__ %}
+            <h3 class="ui dividing header">发表评论</h3>
 
-        <div class="ui comments">
-            
-            <h3 class="ui dividing header">最新评论</h3>
-
-
-            {% for comment in comments %}
-            <div class="comment">
-                <a class="avatar">
-                    <img src="{{ comment.user_image }}">
-                </a>
-                <div class="content" id="{{comment.id}}">
-                    <a class="author">{{ comment.user_name }} {% if comment.user_id == blog.user_id %}(作者){% endif %}</a>
-                    <div class="metadata">
-                        <span class="date">{{ comment.created_at|datetime|safe }}</span>
-                    </div>
-                    <div class="text">
-                        {{ comment.html_content|safe }}
-                    </div>
-                    <!--div class="actions">
-                        <a class="reply">Reply</a>
-                    </div-->
+            <h4 class="ui header">
+                <img class="ui image" src="{{ __user__.image }}">
+                <div class="content">
+                    {{__user__.name}}
                 </div>
+            </h4>
+
+             <form  id="form-comment" class="ui reply form">
+                <div class="field">
+                    <textarea name="content"></textarea>
+                </div>
+                <button type="submit" class="ui blue labeled submit icon button">
+                    <i class="icon edit"></i> 发表评论
+                </button>
+
+                <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
+            </form>
+
+            {% endif %}
+
+            <div class="ui comments">
+
+                <h3 class="ui dividing header">最新评论</h3>
+
+
+                {% for comment in comments %}
+                <div class="comment">
+                    <a class="avatar">
+                        <img src="{{ comment.user_image }}">
+                    </a>
+                    <div class="content" id="{{comment.id}}">
+                        <a class="author">{{ comment.user_name }} {% if comment.user_id == blog.user_id %}(作者){% endif %}</a>
+                        <div class="metadata">
+                            <span class="date">{{ comment.created_at|datetime|safe }}</span>
+                        </div>
+                        <div class="text">
+                            {{ comment.html_content|safe }}
+                        </div>
+                        <!--div class="actions">
+                            <a class="reply">Reply</a>
+                        </div-->
+                    </div>
+                </div>
+                {% else %}
+                <p>还没有人评论，抢个沙发吧...</p>
+                {% endfor %}
             </div>
-            {% else %}
-            <p>还没有人评论，抢个沙发吧...</p>
-            {% endfor %}
-        </div>
+
+        {% endif %}
     </div>
 {% endblock %}

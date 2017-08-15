@@ -5,7 +5,8 @@
     "user_image": "/static/img/user.png",
     "logo": "/static/img/user.png",
     "welcome_message": "欢迎来到我的个人博客网站",
-    "base_url": "http://www.xpath.org"
+    "base_url": "http://www.xpath.org",
+    "use_disqus": true
    },
   "database":{
     "host":"127.0.0.1",
@@ -22,7 +23,6 @@
   },
   "page_size": 10,
   "page_show": 10,
-  "use_disqus": true,
   "email": {
     "server": "127.0.0.1",
     "username": "username",
