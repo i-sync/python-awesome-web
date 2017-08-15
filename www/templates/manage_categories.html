@@ -36,10 +36,11 @@
         getJSON('/api/categories', {
             page: {{ page_index }}
         }, function (err, result) {
+            $("#vm").removeClass('loading');
             if(err){
-                return fatal(err);
+                return error(err);
             }
-            $("#loading").hide();
+            //$("#loading").hide();
             initVM(result)
         });
     });
@@ -56,8 +57,8 @@
         <a class="item" href="/manage/users">用户</a>
         <a class="item active">类别</a>
     </div>
-
-    <div id="vm" class="ui segment">
+    <div id="error" class="ui error hidden message"></div>
+    <div id="vm" class="ui segment loading">
         <a href="/manage/categories/create" class="ui primary button"><i class="plus icon"></i> 新类别 </a>
         <table class="ui celled table">
             <thead>

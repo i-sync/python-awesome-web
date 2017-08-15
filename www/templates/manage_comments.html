@@ -34,10 +34,11 @@
         getJSON('/api/comments', {
             page: {{ page_index }}
         }, function(err, result){
+            $("#vm").removeClass('loading');
             if(err) {
-                return fatal(err);
+                return error(err);
             }
-            $('#loading').hide();
+            //$('#loading').hide();
             initVM(result);
         });
     })
@@ -54,13 +55,9 @@
         <a class="item" href="/manage/categories">类别</a>
     </div>
 
-    <div id="error" class="uk-width-1-1"></div>
+    <div id="error" class="ui error hidden message"></div>
 
-    <div id="loading" class="uk-width-1-1 uk-text-center">
-        <span><i class="uk-icon-spinner uk-icon-medium uk-icon-spin"></i> 正在加载... </span>
-    </div>
-
-    <div id="vm" class="ui container">
+    <div id="vm" class="ui container loading">
         <table class="ui celled table">
             <thead>
                 <tr>

@@ -33,9 +33,11 @@
 
     $(function(){
         if(ID){
+            $('#vm').addClass('loading');
             getJSON('/api/blogs/' + ID, function(err, blog){
+                $('#vm').removeClass('loading');
                 if(err){
-                    return fatal(err);
+                    return error(err);
                 }
                 $('#loading').hide();
                 initVM(blog);
@@ -62,6 +64,8 @@
         <a class="item" href="/manage/categories">类别</a>
     </div>
 
+
+    <div id="error" class="ui error hidden message"></div>
 
     <div class="ui segment">
         <form id="vm" v-on:submit="submit" class="ui form">

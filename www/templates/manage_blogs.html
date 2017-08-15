@@ -33,13 +33,16 @@
     }
 
     $(function () {
+        //$("#loading").removeClass('hidden');
+        //$("#vm").addClass('loading');
         getJSON('/api/blogs', {
             page: {{ page_index}}
         }, function (err, result) {
+            $("#vm").removeClass('loading');
             if(err){
-                return fatal(err);
+                return error(err);
             }
-            $("#loading").hide();
+            //$("#loading").addClass('hidden');
             initVM(result)
         });
     });
@@ -57,7 +60,17 @@
         <a class="item" href="/manage/categories">类别</a>
     </div>
 
-    <div id="vm" class="ui segment">
+    <div id="error" class="ui error hidden message"></div>
+    <!--div id="loading" class="ui icon hidden message">
+        <i class="notched circle loading icon"></i>
+        <div class="content">
+            <div class="header">
+              正在加载...
+            </div>
+        </div>
+    </div-->
+
+    <div id="vm" class="ui segment loading">
         <a href="/manage/blogs/create" class="ui primary button"><i class="plus icon"></i> 新日志 </a>
         <table class="ui celled table">
             <thead>

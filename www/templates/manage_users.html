@@ -21,10 +21,11 @@
         getJSON('/api/users', {
             page: {{ page_index }}
         }, function(err, results){
+            $("#vm").removeClass('loading');
             if(err){
-                return fatal(err);
+                return error(err);
             }
-            $('#loading').hide();
+            //$('#loading').hide();
             initVM(results);
         });
     });
@@ -41,7 +42,8 @@
         <a class="item" href="/manage/categories">类别</a>
     </div>
 
-    <div id="vm" class="ui container">
+    <div id="error" class="ui error hidden message"></div>
+    <div id="vm" class="ui container loading">
         <table class="ui celled table">
             <thead>
                 <tr>

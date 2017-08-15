@@ -500,7 +500,7 @@ function _display_error($obj, err) {
         $obj.hide();
     }
     var msg = err.message || String(err);
-    var L = ['<div class="uk-alert uk-alert-danger">'];
+    var L = ['<div class="ui header">'];
     L.push('<p>Error: ');
     L.push(msg);
     L.push('</p><p>Code: ');
