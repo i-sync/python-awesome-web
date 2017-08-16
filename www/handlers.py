@@ -172,7 +172,10 @@ def register():
     }
 
 @get('/signin')
-def signin():
+def signin(request):
+    if request.__user__: #user has login, redirect /
+        r = web.HTTPFound('/')
+        return r
     return {
         '__template__': 'signin.html'
     }
