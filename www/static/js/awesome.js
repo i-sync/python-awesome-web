@@ -545,3 +545,22 @@ $(function(){
         textarea.addEventListener('keydown',captureTab, false);
     });
 });
+
+
+// 导航栏菜单项自动设置选中状态
+$(function() {
+    var navItem = $('#main-menu a');
+    var i = 0;
+    // i从2开始，跳过第一个href＝"/"导航菜单项
+    for (i = 2; i < navItem.length; i++) {
+        var href = $(navItem[i]).attr('href');
+        href = href.lastIndexOf('/') <=0 ? href : href.slice(0, href.lastIndexOf('/'));
+        if (location.pathname.indexOf(href) == 0) {
+            $(navItem[i]).addClass('active');
+            break;
+        }
+    }
+    if (i == navItem.length) {
+        $(navItem[1]).addClass('active');
+    }
+});
