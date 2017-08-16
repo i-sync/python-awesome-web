@@ -348,7 +348,7 @@ def api_register_user(*, email, name, password):
     uid = next_id()
     sha1_password = '{}:{}'.format(uid, password)
     logging.info('register password:{}, sha1_password:{}'.format(password, sha1_password))
-    user = User(id=uid, name= name.strip(), email= email, password = hashlib.sha1(sha1_password.encode('utf-8')).hexdigest(), image='http://www.gravatar.com/avatar/{}?d=mm&s=120'.format(hashlib.md5(email.encode('utf-8')).hexdigest()))
+    user = User(id=uid, name= name.strip(), email= email, password = hashlib.sha1(sha1_password.encode('utf-8')).hexdigest(), image='http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(email.encode('utf-8')).hexdigest()))
     yield from user.save()
 
     r = web.Response()
