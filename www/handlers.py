@@ -450,13 +450,18 @@ def api_edit_blog(request, *, id, name, summary, content, category_id):
         raise APIValueError('id', 'request path error, id : {}'.format(id))
 
     category = yield from Category.find(category_id)
-    if not category:
-        raise APIValueError('category', 'can not find category, category_id:{}'.format(category_id))
+    if category:
+        #raise APIValueError('category', 'can not find category, category_id:{}'.format(category_id))
+        category_id= category.id
+        category_name = category.name
+    else:
+        category_name =''
+
     blog.name = name
     blog.summary = summary
     blog.content = content
     blog.category_id = category_id
-    blog.category_name = category.name
+    blog.category_name = category_name
     yield from blog.update()
     return blog
 

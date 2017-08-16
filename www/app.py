@@ -3,6 +3,13 @@
 
 
 import logging
+import os.path
+
+logfile=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'log/blog.log')
+#关于日志不输出到文件是和loggin配置的顺序有关.
+#https://stackoverflow.com/questions/20240464/python-logging-file-is-not-working-when-using-logging-basicconfig
+logging.basicConfig(filename=logfile, level = logging.INFO, format='%(asctime)s %(levelname)s %(threadName)-10s %(message)s')
+
 import asyncio
 import json
 import time
@@ -14,8 +21,6 @@ import orm
 from coreweb import add_routes, add_static
 from handlers import cookie2user, COOKIE_NAME, get_categories
 from config import configs
-
-logging.basicConfig(level = logging.INFO)
 
 def init_jinja2(app, **kwargs):
     logging.info('init jinja2...')
