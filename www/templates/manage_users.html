@@ -55,7 +55,7 @@
             <tbody>
                 <tr v-for="user in users">
                     <td>
-                        <span>${user.name}</span>
+                        <a v-bind:href="'/user/'+ user.id">${user.name}</a>
                         <span v-if="user.admin" style="color:#d05"><i class="privacy icon"></i> 管理员</span>
                     </td>
                     <td>
