@@ -1,4 +1,4 @@
-{% extends '__base__.html' %}
+{% extends '__manage_base__.html' %}
 
 {% block title %}编辑日志{% endblock %}
 
@@ -84,11 +84,11 @@
             </div>
             <div class="field">
                 <label>摘要:</label>
-                <textarea v-model="summary" v-on:keydown="captureTab" rows="2" name="summary" placeholder="摘要" ></textarea>
+                <textarea v-model="summary" v-on:keydown="captureTab" rows="10" name="summary" placeholder="摘要" ></textarea>
             </div>
             <div class="field">
                 <label>内容:</label>
-                <textarea v-model="content" v-on:keydown="captureTab" name="content" placeholder="内容"></textarea>
+                <textarea v-model="content" v-on:keydown="captureTab" rows="40" name="content" placeholder="内容"></textarea>
             </div>
             <div class="field">
                 <button class="ui primary button" type="submit"><i class="checkmark icon"></i>保存</button>

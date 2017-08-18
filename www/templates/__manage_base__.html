@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+{% macro pagination(url, page) %}
+    <div class="ui pagination menu">
+        {% if page.has_prev %}
+            <a class="item" href="{{ url }}{{ page.page_index - 1 }}"><i class="angle double left icon"></i></a>
+        {% else %}
+            <a class="disabled item"><i class="angle double left icon"></i></a>
+        {% endif %}
+
+
+        {% if page.page_index == 1 %}
+            <a class="disabled item">1</a>
+        {% else %}
+            <a class="item" href="{{ url }}{{ 1 }}">1</a>
+        {% endif %}
+
+        {% if page.page_list %}
+            {% if page.page_list[0] > 2 %}
+                <a class="disabled item">...</a>
+            {% endif %}
+
+            {% for pl in page.page_list %}
+                {% if pl == page.page_index %}
+                    <a class="disabled item">{{ page.page_index }}</a>
+                {% else %}
+                    <a class="item" href="{{ url }}{{ pl }}">{{ pl }}</a>
+                {% endif %}
+            {% endfor %}
+
+            {% if page.page_list[-1] < (page.page_count-1) %}                
+                <a class="disabled item">...</a>
+            {% endif %}
+        {% endif %}
+
+        {% if page.page_count > 1 %}
+            {% if page.page_index == page.page_count %}
+                    <a class="disabled item">{{ page.page_index }}</a>
+            {% else %}
+                <a class="item" href="{{ url }}{{ page.page_count }}">{{ page.page_count }}</a>
+            {% endif %}
+        {% endif %}
+
+        {% if page.has_next %}
+            <a class="item" href="{{ url }}{{ page.page_index + 1 }}"><i class="angle double right icon"></i></a>
+        {% else %}
+            <a class="disabled item"><i class="angle double right icon"></i></a>
+        {% endif %}
+    </div>
+{% endmacro %}
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    {% block meta %}{% endblock %}
+    <title>{% block title %} ? {% endblock %} - Awesome Python Blog</title>
+    <link rel="stylesheet" type="text/css" href="/static/css/semantic.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/awesome.css">
+
+    <script src="/static/js/jquery-3.2.1.js"></script>
+    <script src="/static/js/semantic.js"></script>
+    <script src="/static/js/sha256.js"></script>
+    <script src="/static/js/vue.js"></script>
+    <script src="/static/js/awesome.js"></script>
+
+    <style>
+
+        .main.container {
+            padding-top: 7em;
+            padding-bottom: 5em;
+
+            min-height: 100%;
+
+            /* Equal to height of footer */
+            /* But also accounting for potential margin-bottom of last child */
+            margin-bottom: -261px;
+        }
+
+        .ui.footer.segment, .push {
+            height: 261px;
+            padding: 5em 0em;
+        }
+    </style>
+    {% block beforehead %} {% endblock %}
+</head>
+<body>
+
+    <div id="main-menu" class="ui inverted fixed massive menu">
+        <div class="ui container">
+            <a href="/" class="item"> Awesome Blog </a>
+            <a href="/" class="item">博客</a>
+            <a target="_blank" href="https://github.com/tianzhenyun/python-awesome-web" class="item">源码</a>
+            <a target="_blank" href="https://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000" class="item">Python3教程</a>
+            <a href="/about" class="item">关于</a>
+
+            <div class="right menu">
+                {% if __user__ %}
+                    <a class="item" href="/user/{{__user__.id}}">{{ __user__.name }}</a>
+                    {% if __user__.admin %}
+                        <a href="/manage/blogs" class="item">管理</a>
+                    {% endif %}
+                    <a href="/signout" class="item">登出</a>
+                {% else %}
+                    <a href="/signin" class="item"> 登录</a>
+                    <a href="/register" class="item">注册</a>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+
+    <div class="ui main container">
+        {% block content %} {% endblock %}
+        <!--
+        <div class="ui grid">
+            <div class="twelve wide column">
+                {% block content_delete %} {% endblock %}
+            </div>
+            <div class="four wide column">
+                <div class="ui segment center aligned">
+                    <img class="ui centered image" src="{{ web_meta.logo }}">
+                    <h4>{{ web_meta.web_name }}</h4>
+                    <p>{{ web_meta.welcome_message }}</p>
+                </div>
+
+                <div class="ui segment">
+                    <h3>Categories</h3>
+                    <div class="ui list">
+                        {% for category in categories %}
+                        <a href="/category/{{ category.id }}" class="item"> {{category.name}}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="ui segment">
+                    <h3>友情链接</h3>
+                    <div class="ui list">
+                        <a target="_blank" href="https://github.com/" class="item"> Github</a>
+                        <a target="_blank" href="https://www.liaoxuefeng.com/" class="item">廖雪峰</a>
+                        <a target="_blank" href="http://www.cashqian.net/" class="item"> 钱奇杰</a>
+                        <a target="_blank" href="https://contact.xpath.org" class="item"> Contacts</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        -->
+        <div class="push"></div>
+    </div>
+
+    <div class="ui inverted vertical footer segment">
+        <div class="ui center aligned container">
+            <div class="ui container">
+                <p>
+                    <a target="_blank" href="https://weibo.com/synchronise"><i class="large weibo icon"></i></a>
+                    <a target="_blank" href="https://github.com/tianzhenyun"><i class="large github icon"></i></a>
+                    <a target="_blank" href="https://plus.google.com/+tianzhenyun"><i class="large google plus icon"></i></a>
+                    <a target="_blank" href="https://twitter.com/asynchronize"><i class="large twitter icon"></i></a>
+                </p>
+                <p>Powered by <a href="#">Awesome Python Blog</a>. Copyright &copy; 2017. </p>
+                <p><a href="https://www.xpath.org" target="_blank">www.xpath.org</a>. All rights reserved. </p>
+                <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1263585421'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s19.cnzz.com/z_stat.php%3Fid%3D1263585421%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script>
+                <!--a target="_blank" href="http://www.w3.org/TR/html5/"><i class="huge html5 icon"></i> </a-->
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
