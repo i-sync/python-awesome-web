@@ -66,11 +66,18 @@
     <style>
 
         .main.container {
-            margin-top: 7em;
+            padding-top: 7em;
+            padding-bottom: 5em;
+
+            min-height: 100%;
+
+            /* Equal to height of footer */
+            /* But also accounting for potential margin-bottom of last child */
+            margin-bottom: -261px;
         }
 
-        .ui.footer.segment {
-            margin: 5em 0em 0em;
+        .ui.footer.segment, .push {
+            height: 261px;
             padding: 5em 0em;
         }
     </style>
@@ -135,6 +142,8 @@
                 </div>
             </div>
         </div>
+
+        <div class="push"></div>
     </div>
 
     <div class="ui inverted vertical footer segment">
