@@ -86,7 +86,9 @@ blockquote .author {
   padding: 3px 4px;
 }
 
-
+.ui.grid img{
+  width: 95%;
+}
 
 /*pygments perldoc.css theme*/
 .codehilite .hll { background-color: #ffffcc }
