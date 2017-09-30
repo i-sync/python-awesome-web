@@ -34,8 +34,10 @@
         <span class="ui metadata">
             由<a href="/user/{{blog.user_id}}">{{blog.user_name}}</a> 发表于 {{ blog.created_at|datetime|safe }} |
             文章分类:<a href="/category/{{blog.category_id}}">{{blog.category_name}}</a> |
-            <i class="unhide icon"></i> {{blog.view_count}} 次阅读
-            <!--<i class="comment icon"></i> {{ comments | length }} 条评论-->
+            <i class="unhide icon"></i> {{blog.view_count}} 次阅读 |
+            {% if not web_meta.use_disqus %}
+                <i class="comment icon"></i> {{ comments | length }} 条评论
+            {% endif %}
         </span>
         <div class="ui hidden divider"></div>
 
