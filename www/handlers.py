@@ -403,7 +403,7 @@ def api_blogs(*, page = '1'):
     p = Page(num, page_index)
     if num == 0:
         return dict(page = p, blogs = ())
-    blogs = yield from Blog.find_all(orderBy='created_at desc', limit=(p.offset, p.limit))
+    blogs = yield from Blog.find_all(order_by='created_at desc', limit=(p.offset, p.limit))
     return dict(page=p, blogs=blogs)
 
 @post('/api/blogs')
