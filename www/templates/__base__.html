@@ -53,13 +53,15 @@
 <head>
     <meta charset="UTF-8">
     {% block meta %}{% endblock %}
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1">
     <title>{% block title %} ? {% endblock %} - Awesome Python Blog</title>
-    <link rel="stylesheet" type="text/css" href="/static/css/semantic.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/semantic.css">
     <link rel="stylesheet" type="text/css" href="/static/css/awesome.css">
     <link rel="stylesheet" type="text/css" href="/static/css/atom-one-light.css">
 
     <script src="/static/js/jquery-3.2.1.min.js"></script>
-    <script src="/static/js/semantic.min.js"></script>
+    <script src="/static/js/semantic.js"></script>
     <script src="/static/js/sha256.js"></script>
     <script src="/static/js/vue.min.js"></script>
     <script src="/static/js/awesome.js"></script>
@@ -86,85 +88,113 @@
     {% block beforehead %} {% endblock %}
 </head>
 <body>
-
-    <div id="main-menu" class="ui inverted fixed massive menu">
-        <div class="ui container">
-            <a href="/" class="item"> Awesome Blog </a>
-            <a href="/" class="item">博客</a>
-            <a target="_blank" href="https://github.com/tianzhenyun/python-awesome-web" class="item">源码</a>
-            <a target="_blank" href="https://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000" class="item">Python3教程</a>
-            <a href="/about" class="item">关于</a>
-
-            <div class="right menu">
-                {% if __user__ %}
-                    <a class="item" href="/user/{{__user__.id}}">{{ __user__.name }}</a>
-                    {% if __user__.admin %}
-                        <a href="/manage/blogs" class="item">管理</a>
-                    {% endif %}
-                    <a href="/signout" class="item">登出</a>
-                {% else %}
-                    <a href="/signin" class="item"> 登录</a>
-                    <a href="/register" class="item">注册</a>
-                {% endif %}
-
-            </div>
-        </div>
+    <div id="sidebar-menu" class="ui sidebar inverted vertical menu">
+        <a href="/" class="item"> Awesome Blog </a>
+        <a target="_blank" href="https://github.com/tianzhenyun/python-awesome-web" class="item">源码</a>
+        <a target="_blank" href="https://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000" class="item">Python3教程</a>
+        <a href="/about" class="item">关于</a>
+        {% if __user__ %}
+            <a class="item" href="/user/{{__user__.id}}">{{ __user__.name }}</a>
+            {% if __user__.admin %}
+                <a href="/manage/blogs" class="item">管理</a>
+            {% endif %}
+            <a href="/signout" class="item">登出</a>
+        {% else %}
+            <a href="/signin" class="item"> 登录</a>
+            <a href="/register" class="item">注册</a>
+        {% endif %}
     </div>
-
-
-    <div class="ui main container">
-        <div class="ui grid">
-            <div class="twelve wide column">
-                {% block content %} {% endblock %}
-            </div>
-            <div class="four wide column">
-                <div class="ui segment center aligned">
-                    <img class="ui centered image" src="{{ web_meta.logo }}">
-                    <h4>{{ web_meta.web_name }}</h4>
-                    <p>{{ web_meta.welcome_message }}</p>
-                </div>
-
-                <div class="ui segment">
-                    <h3>Categories</h3>
-                    <div class="ui list">
-                        {% for category in categories %}
-                        <a href="/category/{{ category.id }}" class="item"> {{category.name}}</a>
-                        {% endfor %}
-                    </div>
-                </div>
-
-                <div class="ui segment">
-                    <h3>友情链接</h3>
-                    <div class="ui list">
-                        <a target="_blank" href="https://github.com/" class="item"> Github</a>
-                        <a target="_blank" href="https://www.liaoxuefeng.com/" class="item">廖雪峰</a>
-                        <a target="_blank" href="http://www.cashqian.net/" class="item"> 钱奇杰</a>
-                        <a target="_blank" href="https://contact.xpath.org" class="item"> Contacts</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="push"></div>
-    </div>
-
-    <div class="ui inverted vertical footer segment">
-        <div class="ui center aligned container">
+    <div class="pusher">
+        <div id="main-menu" class="ui inverted stackable massive menu">
             <div class="ui container">
-                <p>
-                    <a target="_blank" href="https://weibo.com/synchronise"><i class="large weibo icon"></i></a>
-                    <a target="_blank" href="https://github.com/tianzhenyun"><i class="large github icon"></i></a>
-                    <a target="_blank" href="https://plus.google.com/+tianzhenyun"><i class="large google plus icon"></i></a>
-                    <a target="_blank" href="https://twitter.com/asynchronize"><i class="large twitter icon"></i></a>
-                </p>
-                <p>Powered by <a href="#">Awesome Python Blog</a>. Copyright &copy; 2017. </p>
-                <p><a href="https://www.xpath.org" target="_blank">www.xpath.org</a>. All rights reserved. </p>
-                <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1263585421'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s19.cnzz.com/z_stat.php%3Fid%3D1263585421%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script>
-                <!--a target="_blank" href="http://www.w3.org/TR/html5/"><i class="huge html5 icon"></i> </a-->
+                <a href="/" class="item"> Awesome Blog </a>
+                <a href="/" class="item">博客</a>
+                <a target="_blank" href="https://github.com/tianzhenyun/python-awesome-web" class="item">源码</a>
+                <a target="_blank" href="https://www.liaoxuefeng.com/wiki/0014316089557264a6b348958f449949df42a6d3a2e542c000" class="item">Python3教程</a>
+                <a href="/about" class="item">关于</a>
+
+                <div class="right menu">
+                    {% if __user__ %}
+                        <a class="item" href="/user/{{__user__.id}}">{{ __user__.name }}</a>
+                        {% if __user__.admin %}
+                            <a href="/manage/blogs" class="item">管理</a>
+                        {% endif %}
+                        <a href="/signout" class="item">登出</a>
+                    {% else %}
+                        <a href="/signin" class="item"> 登录</a>
+                        <a href="/register" class="item">注册</a>
+                    {% endif %}
+                </div>
             </div>
         </div>
+        <div id="sidebar-button" class="ui inverted icon menu">
+            <a class="item">
+                <i class="sidebar large icon"></i>
+            </a>
+        </div>
+
+        <div class="ui main container">
+            <div class="ui stackable two column divided grid container">
+                <div class="twelve wide column">
+                    {% block content %} {% endblock %}
+                </div>
+                <div class="four wide column">
+                    <div class="ui segment center aligned">
+                        <img class="ui centered image" src="{{ web_meta.logo }}">
+                        <h4>{{ web_meta.web_name }}</h4>
+                        <p>{{ web_meta.welcome_message }}</p>
+                    </div>
+
+                    <div class="ui segment">
+                        <h3>Categories</h3>
+                        <div class="ui list">
+                            {% for category in categories %}
+                            <a href="/category/{{ category.id }}" class="item"> {{category.name}}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="ui segment">
+                        <h3>友情链接</h3>
+                        <div class="ui list">
+                            <a target="_blank" href="https://github.com/" class="item"> Github</a>
+                            <a target="_blank" href="https://www.liaoxuefeng.com/" class="item">廖雪峰</a>
+                            <a target="_blank" href="http://www.cashqian.net/" class="item"> 钱奇杰</a>
+                            <a target="_blank" href="https://contact.xpath.org" class="item"> Contacts</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="push"></div>
+        </div>
+
+        <div class="ui inverted vertical footer segment">
+            <div class="ui center aligned container">
+                <div class="ui container">
+                    <p>
+                        <a target="_blank" href="https://weibo.com/synchronise"><i class="large weibo icon"></i></a>
+                        <a target="_blank" href="https://github.com/tianzhenyun"><i class="large github icon"></i></a>
+                        <a target="_blank" href="https://plus.google.com/+tianzhenyun"><i class="large google plus icon"></i></a>
+                        <a target="_blank" href="https://twitter.com/asynchronize"><i class="large twitter icon"></i></a>
+                    </p>
+                    <p>Powered by <a href="#">Awesome Python Blog</a>. Copyright &copy; 2017. </p>
+                    <p><a href="https://www.xpath.org" target="_blank">www.xpath.org</a>. All rights reserved. </p>
+                    <script type="text/javascript">var cnzz_protocol = (("https:" == document.location.protocol) ? " https://" : " http://");document.write(unescape("%3Cspan id='cnzz_stat_icon_1263585421'%3E%3C/span%3E%3Cscript src='" + cnzz_protocol + "s19.cnzz.com/z_stat.php%3Fid%3D1263585421%26show%3Dpic' type='text/javascript'%3E%3C/script%3E"));</script>
+                    <!--a target="_blank" href="http://www.w3.org/TR/html5/"><i class="huge html5 icon"></i> </a-->
+                </div>
+            </div>
+        </div>
+
     </div>
 
-    <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+        hljs.initHighlightingOnLoad();
+        $(function(){
+            $('.ui.sidebar').sidebar('setting', {
+                transition: 'overlay'
+            }).sidebar('attach events', '#sidebar-button');
+        });
+    </script>
 </body>
 </html>
