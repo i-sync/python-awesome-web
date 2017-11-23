@@ -9,7 +9,7 @@
 
 .ui.metadata > * {
   display: inline-block;
-  margin: 0em 0.5em 0em 0em;
+  margin: 0em 0.5em;
 }
 
 .ui.metadata > :last-child {

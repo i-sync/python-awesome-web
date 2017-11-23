@@ -5,35 +5,40 @@
 {% block content %}
 
     <div class="ui container">
-        {% for blog in blogs %}
-            <div class="ui container">
-                <h2><a href="/blog/{{ blog.id }}">{{ blog.name }}</a> </h2>
-                <span class="ui metadata">
-                    由<a href="/user/{{blog.user_id}}">{{blog.user_name}}</a> 发表于 {{ blog.created_at|datetime|safe }} |
-                    文章分类:<a href="/category/{{blog.category_id}}">{{blog.category_name}}</a> |
-                    <i class="unhide icon"></i> {{blog.view_count}} 次阅读 |
-                    {% if web_meta.use_disqus %}
-                        <i class="comment icon"></i> <span class="disqus-comment-count" data-disqus-identifier="{{ blog.id }}">评论数</span>
-                    {% else %}
-                        <i class="comment icon"></i> {{blog.comments_count}} 条评论
-                    {% endif %}
-                </span>
-                <div class="ui hidden divider"></div>
-
-                {{ blog.html_summary | safe }}
-
-                <div class="ui hidden divider"></div>
-
-                <p><a class="ui primary button" href="/blog/{{ blog.id }}">继续阅读 </a> </p>
-            </div>
-
-            <div class="ui section divider"></div>
-        {% endfor %}
+        <div class="ui relaxed divided items">
+            {% for blog in blogs %}
+                <div class="item">
+                    <div class="content">
+                        <h2><a href="/blog/{{ blog.id }}">{{ blog.name }}</a></h2>
+                        <div class="ui metadata">
+                            <span>此文由</span>
+                            <a href="/user/{{blog.user_id}}">{{blog.user_name}}</a>
+                            <span>发表于 :</span>
+                            {{ blog.created_at|datetime|safe }} |
+                            <span>文章分类 :</span>
+                            <a href="/category/{{blog.category_id}}">{{blog.category_name}}</a> |
+                            <i class="unhide icon"></i> <span>{{blog.view_count}} 次阅读</span> |
+                            {% if web_meta.use_disqus %}
+                                <i class="comment icon"></i> <span class="disqus-comment-count" data-disqus-identifier="{{ blog.id }}">评论数</span>
+                            {% else %}
+                                <i class="comment icon"></i> <span>{{blog.comments_count}} 条评论</span>
+                            {% endif %}
+                        </div>
+                        <div class="ui hidden divider"></div>
+                        <div class="description">
+                            {{ blog.html_summary | safe }}
+                        </div>
+                        <div class="ui hidden divider"></div>
+                        <div class="extra">
+                            <a class="ui primary button" href="/blog/{{ blog.id }}">继续阅读 </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
 
         {{ pagination('?page=', page) }}
-    
     </div>
-
 
     {% if web_meta.use_disqus %}
         <script id="dsq-count-scr" src="//awesome-blog-1.disqus.com/count.js" async></script>
