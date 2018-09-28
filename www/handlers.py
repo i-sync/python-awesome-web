@@ -92,6 +92,12 @@ def get_categories():
     categories = yield from Category.find_all(order_by='created_at desc')
     return categories
 
+def get_ip(request):
+    if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
+        return request.environ['REMOTE_ADDR']
+    else:
+        return request.environ['HTTP_X_FORWARDED_FOR']  # if behind a proxy
+
 '''
 ====================== end function ====================
 '''
@@ -134,7 +140,8 @@ def index(*, page = '1'):
         blogs = yield from Blog.find_all(where='name!=?', args=['__about__'], order_by='created_at desc', limit=(page.offset, page.limit))
         for blog in blogs:
             blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang'])
-            comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
+            #comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
+            comments_count = yield from CommentAnonymous.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
             blog.comments_count = comments_count
     return {
         '__template__': 'blogs.html',
@@ -149,7 +156,8 @@ def get_blog(id):
         raise APIValueError('id', 'can not find blog id is :{}'.format(id))
     blog.view_count += 1
     yield from blog.update()
-    comments = yield from Comment.find_all('blog_id=?', [id], order_by='created_at desc')
+    #comments = yield from Comment.find_all('blog_id=?', [id], order_by='created_at desc')
+    comments = yield from CommentAnonymous.find_all('blog_id=?', [id], order_by='created_at desc')
     for c in comments:
         c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang'])
     blog.html_content = markdown2.markdown(blog.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang'])
@@ -200,7 +208,7 @@ def get_user(*, id):
 
 @get('/category/{id}')
 def get_category_blogs(request, *, id, page='1'):
-    category = yield  from Category.find(id)
+    category = yield from Category.find(id)
     if not category:
         raise APIValueError('category id', 'can not find category, by id:{}'.format(id))
 
@@ -489,6 +497,7 @@ def api_create_blog_comments(request, *, id, content):
 @get('/api/comments')
 def api_comments(*, page = '1'):
     '''get all comments.'''
+    check_admin(request)
     page_index = get_page_index(page)
     num = yield from Comment.find_number('count(id)')
     p = Page(num, page_index)
@@ -507,6 +516,54 @@ def api_delete_comments(request, *, comment_id):
     yield from comment.remove()
     return comment
 
+'''-----------comments_anonymous-----------'''
+@post('/api/blogs/{id}/comments_anonymous')
+def api_create_blog_comments_anonymous(request, *, parent_id, blog_id, target_name, content, name, email, website):
+    '''create blog comments anonymous'''
+    #if not request.__user__:
+    #    raise APIPermissionError('please login first.')
+
+    if not content or not content.strip():
+        raise APIValueError('content', 'content can not be empty.')
+    if not name or not name.strip():
+        raise APIValueError('name', 'name can not be empty.')
+    if not email or not email.strip():
+        raise APIValueError('email', 'email can not be empty.')
+
+    blog = yield from Blog.find(blog_id)
+    if blog is None:
+        raise APIResourceNotFoundError('blog', 'can not find blog, id :{}'.format(id))
+
+    if request.__user__:
+        avatar = request.__user__.image
+    else:
+        avatar = 'http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(name.encode('utf-8')).hexdigest())
+
+    comment_anonymous = CommentAnonymous(parent_id = parent_id, blog_id = blog_id, target_name = target_name, content = content.strip(), name = name.strip(), email = email.strip(), website = website.strip(), avatar = avatar, ip = get_ip(request) )
+    yield from comment_anonymous.save()
+    return comment_anonymous
+
+@get('/api/comments_anonymous')
+def api_comments_anonymous(*, page = '1'):
+    '''get all comments.'''
+    check_admin(request)
+    page_index = get_page_index(page)
+    num = yield from CommentAnonymous.find_number('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page = p, comments = ())
+    comments = yield from CommentAnonymous.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
+    return dict(page = p, comments = comments)
+
+@post('/api/comments_anonymous/{comment_id}/delete')
+def api_delete_comments_anonymous(request, *, comment_anonymous_id):
+    '''delete comment.'''
+    check_admin(request)
+    comment = yield from CommentAnonymous.find(comment_anonymous_id)
+    if comment is None:
+        raise APIResourceNotFoundError('Comment', 'can not find comment, comment id: {}'.format(comment_anonymous_id))
+    yield from comment.remove()
+    return comment
 
 '''-----------categories-----------'''
 @get('/api/categories')

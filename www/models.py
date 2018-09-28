@@ -48,6 +48,22 @@ class Comment(Model):
     content = TextField()
     created_at = FloatField(default = time.time)
 
+class CommentAnonymous(Model):
+    __table__ = 'comments_anonymous'
+
+    id = StringField(primary_key = True, default = next_id, ddl = 'varchar(50)')
+    parent_id = StringField(ddl = 'varchar(50)')
+    blog_id = StringField(ddl = 'varchar(50)')
+    target_name = StringField(ddl = 'varchar(50)')
+    name = StringField(ddl = 'varchar(50)')
+    email = StringField(ddl = 'varchar(50)')
+    website = StringField(ddl = 'varchar(100)')
+    avatar = StringField(ddl = 'varchar(200)')
+    ip = StringField(ddl = 'varchar(50)')
+    content = TextField()
+    created_at = FloatField(default = time.time)
+
+
 class Category(Model):
     __table__ = 'categories'
 
