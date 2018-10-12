@@ -6,7 +6,8 @@
     "logo": "/static/img/user.png",
     "welcome_message": "欢迎来到我的个人博客网站",
     "base_url": "http://www.xpath.org",
-    "use_disqus": true
+    "use_disqus": true,
+    "anonymous_comment": true
    },
   "database":{
     "host":"127.0.0.1",

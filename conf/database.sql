@@ -56,7 +56,7 @@ create table comments_anonymous(
     `target_name` varchar(50),
     `content` mediumtext not null,
     `name` varchar(50) not null,
-    `email` varchar(50) not null,
+    `email` varchar(50),
     `website` varchar(100),
     `avatar` varchar(200),
     `ip` varchar(50),

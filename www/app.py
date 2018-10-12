@@ -139,8 +139,13 @@ def datetime_filter(t):
     if delta < 604800:
         return u'<span title="{}">{}天前</span>'.format(str_date, delta // 86400)
     #dt = datetime.fromtimestamp(t)
-    return u'<span title="{}">{}</span>'.format(str_date, date_time.strftime("%Y年%m月%d日"))
+    return u'<span title="{}">{}</span>'.format(str_date, date_time.strftime("%Y-%m-%d"))
 
+def ensure_http(url):
+    if url.startswith("http") or url.startswith("https"):
+        return url
+    else:
+        return "http://" + url;
 
 
 #def index(request):
@@ -154,7 +159,7 @@ def init(loop):
     app = web.Application(loop = loop, middlewares = [
         logger_factory, auth_factory, response_factory
     ])
-    init_jinja2(app, filters = dict(datetime = datetime_filter))
+    init_jinja2(app, filters = dict(datetime = datetime_filter, ensure_http = ensure_http))
     add_routes(app, 'handlers')
     add_static(app)
     #app.router.add_route('GET', '/', index)

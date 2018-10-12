@@ -239,9 +239,9 @@ $(function () {
                 }
                 if (err) {
                     $alert.text(err.message ? err.message : (err.error ? err.error : err));///.removeClass('uk-hidden').show();
-                    if (($alert.offset().top - 60) < $(window).scrollTop()) {
-                        $('html,body').animate({ scrollTop: $alert.offset().top - 60 });
-                    }
+                    //if (($alert.offset().top - 60) < $(window).scrollTop()) {
+                    //    $('html,body').animate({ scrollTop: $alert.offset().top - 60 });
+                    //}
                     if (fieldName) {
                         $form.find('[name=' + fieldName + ']').closest('.field').addClass('error');
                     }

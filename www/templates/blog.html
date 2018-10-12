@@ -4,25 +4,38 @@
 
 {% block beforehead %}
 <script>
-    var comment_url = '/api/blogs/{{ blog.id }}/comments';
+    var comment_url = '/api/blogs/{{ blog.id }}/comments_anonymous';
 
     $(function(){
         var $form = $('#form-comment');
         $form.submit(function(e){
             e.preventDefault();
             $form.showFormError('');
+            var parent_id = $form.find('input[name="parent_id"]').val().trim();
+            var target_name = $form.find('input[name="target_name"]').val().trim();
+            var name = $form.find('input[name="name"]').val().trim();
+            var email = $form.find('input[name="email"]').val().trim();
+            var website = $form.find('input[name="website"]').val().trim();
             var content = $form.find('textarea').val().trim();
+
+            if(name === ''){
+                name = "匿名";
+            }
+            if(email !== '' && !/\S+@\S+\.\S+/.test(email)){
+                return $form.showFormError({message:'请输入正确的邮箱地址！', data:'email'});
+            }
             if(content === ''){
                 return $form.showFormError({message:'请输入评论内容！', data:'content'});
             }
-            $form.postJSON(comment_url, {content : content}, function(err, result){
+            $form.postJSON(comment_url, {parent_id: parent_id, target_name : target_name, name: name, email: email, website: website, content : content}, function(err, result){
                 if(err){
                     return $form.showFormError(err);
                 }
                 refresh();
             });
         })
-    })
+    });
+
 </script>
 {% endblock %}
 
@@ -73,6 +86,99 @@
                 })();
             </script>
             <noscript>Please enable JavaScript to view the <a href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+        {% elif web_meta.anonymous_comment %}
+            <div class="ui reply modal">
+                <i class="close icon"></i>
+                <h3 class="header">发表评论</h3>
+
+                <div class="content">
+                    <form  id="form-comment" class="ui form">
+                        <input type="hidden" name="parent_id">
+                        <input type="hidden" name="target_name">
+                        <div class="field">
+                            <label>昵称</label>
+                            {% if __user__ %}
+                                <input type="text" name="name" placeholder="[可选]" value="{{ __user__.name}}"/>
+                            {% else %}
+                                <input type="text" name="name" placeholder="[可选]"/>
+                            {% endif %}
+                        </div>
+                        <div class="field">
+                            <label>邮箱</label>
+                            {% if __user__ %}
+                                <input type="text" name="email" placeholder="[可选]" value="{{ __user__.email}}"/>
+                            {% else %}
+                                <input type="text" name="email" placeholder="[可选]"/>
+                            {% endif %}
+                        </div>
+                        <div class="field">
+                            <label>网站</label>
+                            <input type="text" name="website" placeholder="[可选]"/>
+                        </div>
+                        <div class="field">
+                            <label>留言</label>
+                            <textarea name="content" placeholder=""></textarea>
+                        </div>
+                        <button type="submit" class="ui green labeled submit icon button">
+                            <i class="icon edit"></i> 发表评论
+                        </button>
+                        <div class="ui red close-modal button">
+                            <i class="icon close"></i> 关闭
+                        </div>
+
+                        <div class="ui error message"><ul class="list"><li>Special Field must have a value</li></ul></div>
+                    </form>
+                </div>
+            </div>
+
+            <h3 class="ui dividing header">评论
+                <div class="right floated content" style="position:absolute;right:1.5rem;">
+                    <a href="#" class="reply" data-id="" data-name=""><i class="pencil alternate icon"></i>Reply</a>
+                </div>
+            </h3>
+            <div class="ui comments">
+                {% for comment in comments if not comment.parent_id %}
+                    <div class="comment">
+                        <a class="avatar"><img src="{{ comment.avatar }}"/></a>
+                        <div class="content">
+                            <a class="author" {% if comment.website %} href="{{comment.website | ensure_http}}" {% endif %}>{{ comment.name}}</a>
+                            <div class="metadata">
+                                <span class="date">{{ comment.created_at|datetime|safe }}</span>
+                            </div>
+                            <div class="text">
+                                {{ comment.html_content|safe }}
+                            </div>
+                            <div class="actions">
+                                <a class="reply" data-id="{{comment.id}}" data-name="{{comment.name}}">Reply</a>
+                            </div>
+                            <div class="comments">
+                                {% for subcomment in comments if subcomment.parent_id %}
+                                    {% if subcomment.parent_id == comment.id %}
+                                        <div class="comment">
+                                            <a class="avatar" {% if comment.website %} href="{{comment.website}}" {% endif %}><img src="{{ subcomment.avatar }}"/></a>
+                                            <div class="content">
+                                                <a class="author">{{ subcomment.name}}</a>
+                                                <div class="metadata">
+                                                    <span class="date">{{ subcomment.created_at|datetime|safe }}</span>
+                                                </div>
+                                                <div class="text">
+                                                    回复 <a class="author">@{{subcomment.target_name}}</a>
+                                                    {{ subcomment.html_content|safe }}
+                                                </div>
+                                                <div class="actions">
+                                                    <a class="reply" data-id="{{comment.id}}" data-name="{{subcomment.name}}">Reply</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <p>还没有人评论，抢个沙发吧...</p>
+                {% endfor %}
+            </div>
         {% else %}
             {% if __user__ %}
             <h3 class="ui dividing header">发表评论</h3>
@@ -127,4 +233,32 @@
 
         {% endif %}
     </div>
+{% endblock %}
+
+{% block endofbody %}
+    <script>
+        $(function(){
+            $("a.reply").click(function(e){
+                e.preventDefault();
+                //get parent_id, target_name;
+                var parent_id = $(this).data("id");
+                var target_name = $(this).data("name");
+
+                $("#form-comment input[name='parent_id']").val(parent_id);
+                $("#form-comment input[name='target_name']").val(target_name);
+                if(target_name !== ''){
+                    $("#form-comment textarea").attr("placeholder", "回复 @" + target_name);
+                }else{
+                    $("#form-comment textarea").attr("placeholder", "");
+                }
+                $(".ui.reply.modal").modal("show");
+            });
+
+            //close modal
+            $("div.close-modal.button").click(function(e){
+                e.preventDefault();
+                $(".ui.reply.modal").modal("hide");
+            });
+        });
+    </script>
 {% endblock %}

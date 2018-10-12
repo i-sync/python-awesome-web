@@ -11,7 +11,7 @@ import markdown2
 from apis import APIValueError, APIError, APIResourceNotFoundError, APIPermissionError, Page
 from coreweb import  get, post
 
-from models import User, Comment, Blog, Category, next_id
+from models import User, Comment, CommentAnonymous, Blog, Category, next_id
 from aiohttp import web
 from config import configs
 
@@ -157,7 +157,7 @@ def get_blog(id):
     blog.view_count += 1
     yield from blog.update()
     #comments = yield from Comment.find_all('blog_id=?', [id], order_by='created_at desc')
-    comments = yield from CommentAnonymous.find_all('blog_id=?', [id], order_by='created_at desc')
+    comments = yield from CommentAnonymous.find_all('blog_id=?', [id], order_by='created_at asc')
     for c in comments:
         c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang'])
     blog.html_content = markdown2.markdown(blog.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang'])
@@ -236,7 +236,7 @@ def get_about():
     if len(about) == 0:
         raise APIResourceNotFoundError('about', 'can not find about page.')
 
-    comments = yield from Comment.find_all('blog_id=?', [about[0].id], order_by='created_at desc')
+    comments = yield from CommentAnonymous.find_all('blog_id=?', [about[0].id], order_by='created_at asc')
     for c in comments:
         c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang'])
 
@@ -359,7 +359,7 @@ def api_register_user(*, email, name, password):
     uid = next_id()
     sha1_password = '{}:{}'.format(uid, password)
     logging.info('register password:{}, sha1_password:{}'.format(password, sha1_password))
-    user = User(id=uid, name= name.strip(), email= email, password = hashlib.sha1(sha1_password.encode('utf-8')).hexdigest(), image='http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(email.encode('utf-8')).hexdigest()))
+    user = User(id=uid, name= name.strip(), email= email, password = hashlib.sha1(sha1_password.encode('utf-8')).hexdigest(), image='http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(name.encode('utf-8')).hexdigest()))
     yield from user.save()
 
     r = web.Response()
@@ -495,7 +495,7 @@ def api_create_blog_comments(request, *, id, content):
     return comment
 
 @get('/api/comments')
-def api_comments(*, page = '1'):
+def api_comments(request, *, page = '1'):
     '''get all comments.'''
     check_admin(request)
     page_index = get_page_index(page)
@@ -517,7 +517,7 @@ def api_delete_comments(request, *, comment_id):
     return comment
 
 '''-----------comments_anonymous-----------'''
-@post('/api/blogs/{id}/comments_anonymous')
+@post('/api/blogs/{blog_id}/comments_anonymous')
 def api_create_blog_comments_anonymous(request, *, parent_id, blog_id, target_name, content, name, email, website):
     '''create blog comments anonymous'''
     #if not request.__user__:
@@ -527,24 +527,21 @@ def api_create_blog_comments_anonymous(request, *, parent_id, blog_id, target_na
         raise APIValueError('content', 'content can not be empty.')
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty.')
-    if not email or not email.strip():
-        raise APIValueError('email', 'email can not be empty.')
+    #if not email or not email.strip():
+    #   raise APIValueError('email', 'email can not be empty.')
 
     blog = yield from Blog.find(blog_id)
     if blog is None:
         raise APIResourceNotFoundError('blog', 'can not find blog, id :{}'.format(id))
 
-    if request.__user__:
-        avatar = request.__user__.image
-    else:
-        avatar = 'http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(name.encode('utf-8')).hexdigest())
+    avatar = 'http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(name.encode('utf-8')).hexdigest())
 
-    comment_anonymous = CommentAnonymous(parent_id = parent_id, blog_id = blog_id, target_name = target_name, content = content.strip(), name = name.strip(), email = email.strip(), website = website.strip(), avatar = avatar, ip = get_ip(request) )
+    comment_anonymous = CommentAnonymous(parent_id = parent_id, blog_id = blog_id, target_name = target_name, content = content.strip(), name = name.strip(), email = email.strip(), website = website.strip(), avatar = avatar, ip = request.remote )
     yield from comment_anonymous.save()
     return comment_anonymous
 
 @get('/api/comments_anonymous')
-def api_comments_anonymous(*, page = '1'):
+def api_comments_anonymous(request, *, page = '1'):
     '''get all comments.'''
     check_admin(request)
     page_index = get_page_index(page)
@@ -555,7 +552,7 @@ def api_comments_anonymous(*, page = '1'):
     comments = yield from CommentAnonymous.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
     return dict(page = p, comments = comments)
 
-@post('/api/comments_anonymous/{comment_id}/delete')
+@post('/api/comments_anonymous/{comment_anonymous_id}/delete')
 def api_delete_comments_anonymous(request, *, comment_anonymous_id):
     '''delete comment.'''
     check_admin(request)

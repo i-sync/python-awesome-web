@@ -18,7 +18,7 @@
                 delete_comment: function(comment){
                     var content = comment.content.length > 20 ? comment.content.substring(0, 20) + '...' : comment.content;
                     if(confirm('确认要删除评论"'+ content +'"？ 删除后不可恢复！')){
-                        postJSON('/api/comments/'+ comment.id +'/delete', function(err, result){
+                        postJSON('/api/comments_anonymous/'+ comment.id +'/delete', function(err, result){
                             if(err){
                                 return error(err);
                             }
@@ -31,7 +31,7 @@
     }
 
     $(function(){
-        getJSON('/api/comments', {
+        getJSON('/api/comments_anonymous', {
             page: {{ page_index }}
         }, function(err, result){
             $("#vm").removeClass('loading');
