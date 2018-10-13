@@ -93,10 +93,13 @@ def get_categories():
     return categories
 
 def get_ip(request):
-    if request.environ.get('HTTP_X_FORWARDED_FOR') is None:
-        return request.environ['REMOTE_ADDR']
+    peername = request.transport.get_extra_info('peername')
+    logger.info(peername)
+    if peername is not None:
+        host, port, *_ = peername
+        return host
     else:
-        return request.environ['HTTP_X_FORWARDED_FOR']  # if behind a proxy
+        return None
 
 '''
 ====================== end function ====================
@@ -537,7 +540,7 @@ def api_create_blog_comments_anonymous(request, *, parent_id, blog_id, target_na
 
     avatar = 'http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(name.encode('utf-8')).hexdigest())
 
-    comment_anonymous = CommentAnonymous(parent_id = parent_id, blog_id = blog_id, target_name = target_name, content = content.strip(), name = name.strip(), email = email.strip(), website = website.strip(), avatar = avatar, ip = request.remote )
+    comment_anonymous = CommentAnonymous(parent_id = parent_id, blog_id = blog_id, target_name = target_name, content = content.strip(), name = name.strip(), email = email.strip(), website = website.strip(), avatar = avatar, ip = get_ip(request) )
     yield from comment_anonymous.save()
     return comment_anonymous
 
