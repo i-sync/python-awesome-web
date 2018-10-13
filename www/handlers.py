@@ -4,8 +4,8 @@
 '''
 Url Handlers
 '''
-
-import re, time, json, logging, hashlib, base64, asyncio
+from logger import logger
+import re, time, json, hashlib, base64, asyncio
 import markdown2
 
 from apis import APIValueError, APIError, APIResourceNotFoundError, APIPermissionError, Page
@@ -75,12 +75,12 @@ def cookie2user(cookie_str):
 
         s = '{}-{}-{}-{}'.format(uid, user.password, expires, _COOKIE_KEY)
         if sha1 != hashlib.sha1(s.encode('utf-8')).hexdigest():
-            logging.info('cookie:{} is invalid, invalid sha1')
+            logger.info('cookie:{} is invalid, invalid sha1')
             return None
         user.password = '*' * 8
         return user
     except Exception as e:
-        logging.exception(e)
+        logger.exception(e)
         return None
 
 def text2html(text):
@@ -152,6 +152,7 @@ def index(*, page = '1'):
 @get('/blog/{id}')
 def get_blog(id):
     blog = yield from Blog.find(id)
+    logger.info('blog id is :{}'.format(id))
     if not blog:
         raise APIValueError('id', 'can not find blog id is :{}'.format(id))
     blog.view_count += 1
@@ -193,7 +194,7 @@ def signout(request):
     referer = request.headers.get('Referer')
     r = web.HTTPFound(referer or '/')
     r.set_cookie(COOKIE_NAME, '-deleted-', max_age=0, httponly=True)
-    logging.info('User signed out.')
+    logger.info('User signed out.')
     return r
 
 @get('/user/{id}')
@@ -358,7 +359,7 @@ def api_register_user(*, email, name, password):
 
     uid = next_id()
     sha1_password = '{}:{}'.format(uid, password)
-    logging.info('register password:{}, sha1_password:{}'.format(password, sha1_password))
+    logger.info('register password:{}, sha1_password:{}'.format(password, sha1_password))
     user = User(id=uid, name= name.strip(), email= email, password = hashlib.sha1(sha1_password.encode('utf-8')).hexdigest(), image='http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(name.encode('utf-8')).hexdigest()))
     yield from user.save()
 
@@ -383,7 +384,7 @@ def authenticate(*, email, password, remember):
 
     #check password
     sha1_password = '{}:{}'.format(user.id, password)
-    #logging.info('login password:{}, sha1_password:{}'.format(password, sha1_password))
+    #logger.info('login password:{}, sha1_password:{}'.format(password, sha1_password))
     if user.password != hashlib.sha1(sha1_password.encode('utf-8')).hexdigest():
         raise APIValueError('password', 'Invalid Password.')
     # authenticate ok, set cookie
@@ -438,7 +439,7 @@ def api_create_blog(request, *, name, summary, content, category_id):
 
 @post('/api/blogs/{id}/delete')
 def api_delete_blog(request, *, id):
-    logging.info('delete blog id: {}'.format(id))
+    logger.info('delete blog id: {}'.format(id))
     check_admin(request)
     blog = yield from Blog.find(id)
     if blog:
@@ -603,7 +604,7 @@ def api_edit_category(request, *, id, name):
 
 @post('/api/categories/{id}/delete')
 def api_delete_category(request, *, id):
-    logging.info('delete category id: {}'.format(id))
+    logger.info('delete category id: {}'.format(id))
     check_admin(request)
     category = yield from Category.find(id)
     if category:

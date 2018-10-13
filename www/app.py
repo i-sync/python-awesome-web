@@ -1,14 +1,9 @@
 #!/usr/bin/env python
 # _*_ coding: utf-8 _*_
 
-
 import logging
+from logger import logger
 import os.path
-
-logfile=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'log/blog.log')
-#关于日志不输出到文件是和loggin配置的顺序有关.
-#https://stackoverflow.com/questions/20240464/python-logging-file-is-not-working-when-using-logging-basicconfig
-logging.basicConfig(filename=logfile, level = logging.INFO, format='%(asctime)s %(levelname)s %(threadName)-10s %(message)s')
 
 import asyncio
 import json
@@ -23,7 +18,7 @@ from handlers import cookie2user, COOKIE_NAME, get_categories
 from config import configs
 
 def init_jinja2(app, **kwargs):
-    logging.info('init jinja2...')
+    logger.info('init jinja2...')
     options = dict(
         autoescape = kwargs.get('autoescape', True),
         block_start_string = kwargs.get('block_start_string', '{%'),
@@ -35,7 +30,7 @@ def init_jinja2(app, **kwargs):
     path = kwargs.get('path', None)
     if path is None:
         path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
-    logging.info('set jinja2 template path: {}'.format(path))
+    logger.info('set jinja2 template path: {}'.format(path))
     env = Environment(loader = FileSystemLoader(path), **options)
     filters = kwargs.get('filters', None)
     if filters is not None:
@@ -46,11 +41,11 @@ def init_jinja2(app, **kwargs):
 @asyncio.coroutine
 def logger_factory(app, handler):
     @asyncio.coroutine
-    def logger(request):
-        logging.info('Request: {} {}'.format(request.method, request.path))
+    def inner_logger(request):
+        logger.info('Request: {} {}'.format(request.method, request.path))
         # await asyncio.sleep(0.3)
         return (yield from handler(request))
-    return logger
+    return inner_logger
 
 @asyncio.coroutine
 def data_factory(app, handler):
@@ -59,10 +54,10 @@ def data_factory(app, handler):
         if request.method == 'POST':
             if request.content_type.startswith('application/json'):
                 request.__data__ = yield from request.json()
-                logging.info('request json: {}'.format(str(request.__data__)))
+                logger.info('request json: {}'.format(str(request.__data__)))
             elif request.content_type.startswith('application/x-www-form-urlencoded'):
                 request.__data__ = yield from request.post()
-                logging.info('request form: {}'.format(str(request.__data__)))
+                logger.info('request form: {}'.format(str(request.__data__)))
         return (yield from handler(request))
     return parse_data
 
@@ -70,13 +65,13 @@ def data_factory(app, handler):
 def auth_factory(app, handler):
     @asyncio.coroutine
     def auth(request):
-        logging.info('check user: {} {}'.format(request.method, request.path))
+        logger.info('check user: {} {}'.format(request.method, request.path))
         request.__user__ = None
         cookie_str = request.cookies.get(COOKIE_NAME)
         if cookie_str:
             user = yield from cookie2user(cookie_str)
             if user:
-                logging.info('set current user: {}'.format(user.email))
+                logger.info('set current user: {}'.format(user.email))
                 request.__user__ = user
         if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
             return web.HTTPFound('/signin')
@@ -87,7 +82,7 @@ def auth_factory(app, handler):
 def response_factory(app, handler):
     @asyncio.coroutine
     def response(request):
-        logging.info('Response handler...')
+        logger.info('Response handler...')
         r = yield from handler(request)
         if isinstance(r, web.StreamResponse):
             return r
@@ -154,7 +149,7 @@ def ensure_http(url):
 @asyncio.coroutine
 def init(loop):
     #app = web.Application(loop = loop, host = '127.0.0.1', port = 3306, user = 'root', password = '123', database = 'awesome')
-    print(configs.database)
+    logger.info(configs.database)
     yield from orm.create_pool(loop = loop, **configs.database)
     app = web.Application(loop = loop, middlewares = [
         logger_factory, auth_factory, response_factory
@@ -164,7 +159,7 @@ def init(loop):
     add_static(app)
     #app.router.add_route('GET', '/', index)
     srv = yield from loop.create_server(app.make_handler(), 'localhost', 8080)
-    logging.info('Server started at http://127.0.0.1:8080...')
+    logger.info('Server started at http://127.0.0.1:8080...')
     return srv
 
 loop = asyncio.get_event_loop()

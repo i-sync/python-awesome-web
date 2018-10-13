@@ -5,11 +5,11 @@
 import os
 import asyncio
 import inspect
-import logging
 import functools
 from urllib import parse
 from aiohttp import web
 from apis import APIError
+from logger import logger
 
 def get(path):
     '''
@@ -132,7 +132,7 @@ class RequestHandler(object):
             #check named arg:
             for k, v in request.match_info.items():
                 if k in kw:
-                    logging.warning('Duplicate arg name in named arg and args:{}'.format(k))
+                    logger.warning('Duplicate arg name in named arg and args:{}'.format(k))
                 kw[k] = v
 
         if self._has_request_arg:
@@ -143,7 +143,7 @@ class RequestHandler(object):
             for name in self._requested_kw_args:
                 if not name in kw:
                     return web.HTTPBadRequest('Missing argument:{}'.format(name))
-        logging.info('call with args: {}'.format(str(kw)))
+        logger.info('call with args: {}'.format(str(kw)))
         try:
             r = yield from self._func(**kw)
             return r
@@ -153,7 +153,7 @@ class RequestHandler(object):
 def add_static(app):
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
     app.router.add_static('/static/', path)
-    logging.info('add static {} = {}'.format('/static/', path))
+    logger.info('add static {} = {}'.format('/static/', path))
 
 def add_route(app, fn):
     method = getattr(fn, '__method__', None)
@@ -162,7 +162,7 @@ def add_route(app, fn):
         raise ValueError('@Get or @Post not defined in {}.'.format(str(fn)))
     if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn):
         fn = asyncio.coroutine(fn)
-    logging.info('add route {} {} => {}({})'.format(method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
+    logger.info('add route {} {} => {}({})'.format(method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
     app.router.add_route(method, path, RequestHandler(app, fn))
 
 def add_routes(app, module_name):

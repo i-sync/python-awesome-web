@@ -1,19 +1,15 @@
 #!/usr/bin/env python
 # _*_ coding: utf-8 _*_
 
-import logging
+from logger import logger
 import aiomysql
 import asyncio
 
 __pool = None
 
-
-logging.basicConfig(level=logging.INFO)
-#log = logging.getLogger(__name__)
-
 @asyncio.coroutine
 def create_pool(loop, **kw):
-    logging.info('Create database connection pool...{}'.format(str(kw)))
+    logger.info('Create database connection pool...{}'.format(str(kw)))
     global __pool
     __pool = yield from aiomysql.create_pool(
         host = kw.get('host', 'localhost'),
@@ -37,7 +33,7 @@ def destory_pool():
 
 @asyncio.coroutine
 def select(sql, args, size = None):
-    logging.info('SQL:{}\tARGS:{}'.format(sql, args))
+    logger.info('SQL:{}\tARGS:{}'.format(sql, args))
     global __pool
     with (yield from __pool) as conn:
         cur = yield from conn.cursor(aiomysql.DictCursor)
@@ -47,12 +43,12 @@ def select(sql, args, size = None):
         else:
             rs = yield from cur.fetchall()
         yield from cur.close()
-        logging.info('rows returned: {}'.format(len(rs)))
+        logger.info('rows returned: {}'.format(len(rs)))
         return rs
 
 @asyncio.coroutine
 def execute(sql, args, autocommit = True):
-    logging.info(sql)
+    logger.info(sql)
     global __pool
     with (yield from __pool) as conn:
         if not autocommit:
@@ -122,7 +118,7 @@ class ModelMetaclass(type):
             return type.__new__(cls, name, bases, attrs)
 
         table_name = attrs.get('__table__', None) or name
-        logging.info('found model : {} (table:{})'.format(name, table_name))
+        logger.info('found model : {} (table:{})'.format(name, table_name))
 
         #get all field and primary key
         mappings = dict()
@@ -130,7 +126,7 @@ class ModelMetaclass(type):
         primary_key = None
         for k, v in attrs.items():
             if isinstance(v, Field):
-                logging.info('   found mapping: {} ===> {}'.format(k, v))
+                logger.info('   found mapping: {} ===> {}'.format(k, v))
                 mappings[k] = v
                 if v.primary_key:
                     if primary_key:
@@ -181,7 +177,7 @@ class Model(dict, metaclass=ModelMetaclass):
             field = self.__mappings__[key]
             if field.default is not None:
                 value = field.default() if callable(field.default) else field.default
-                logging.info('using default value for {}: {}'.format(key, str(value)))
+                logger.info('using default value for {}: {}'.format(key, str(value)))
                 setattr(self, key, value)
         return value
 
@@ -249,7 +245,7 @@ class Model(dict, metaclass=ModelMetaclass):
         args.append(self.get_value_or_default(self.__primary_key__))
         rows = yield from execute(self.__insert__, args)
         if rows != 1:
-            logging.warning('Failed to insert record: affected rows: {}'.format(rows))
+            logger.warning('Failed to insert record: affected rows: {}'.format(rows))
 
     @asyncio.coroutine
     def update(self):
@@ -257,11 +253,11 @@ class Model(dict, metaclass=ModelMetaclass):
         args.append(self.get_value(self.__primary_key__))
         rows = yield from execute(self.__update__, args)
         if rows != 1:
-            logging.warning('Failed to update by primary key: affected rows: {}'.format(rows))
+            logger.warning('Failed to update by primary key: affected rows: {}'.format(rows))
 
     @asyncio.coroutine
     def remove(self):
         args = [self.get_value(self.__primary_key__)]
         rows = yield from execute(self.__delete__, args)
         if rows != 1:
-            logging.warning('Failed to remove by primary key: affected rows: {}'.format(rows))
+            logger.warning('Failed to remove by primary key: affected rows: {}'.format(rows))

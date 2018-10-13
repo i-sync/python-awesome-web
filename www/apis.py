@@ -6,7 +6,7 @@
 JSON API definition.
 '''
 
-import json, logging, inspect, functools
+import json, inspect, functools
 from config import configs
 
 class APIError(Exception):
