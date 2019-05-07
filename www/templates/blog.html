@@ -141,7 +141,7 @@
                     <div class="comment">
                         <a class="avatar"><img src="{{ comment.avatar }}"/></a>
                         <div class="content">
-                            <a class="author" {% if comment.website %} href="{{comment.website | ensure_http}}" {% endif %}>{{ comment.name}}</a>
+                            <a class="author" {% if comment.website %} href="{{comment.website | ensure_http}}" target="_blank" {% endif %}>{{ comment.name}}</a>
                             <div class="metadata">
                                 <span class="date">{{ comment.created_at|datetime|safe }}</span>
                             </div>
@@ -155,9 +155,9 @@
                                 {% for subcomment in comments if subcomment.parent_id %}
                                     {% if subcomment.parent_id == comment.id %}
                                         <div class="comment">
-                                            <a class="avatar" {% if comment.website %} href="{{comment.website}}" {% endif %}><img src="{{ subcomment.avatar }}"/></a>
+                                            <a class="avatar"><img src="{{ subcomment.avatar }}"/></a>
                                             <div class="content">
-                                                <a class="author">{{ subcomment.name}}</a>
+                                                <a class="author" {% if subcomment.website %} href="{{subcomment.website | ensure_http}}" target="_blank" {% endif %}>{{ subcomment.name}}</a>
                                                 <div class="metadata">
                                                     <span class="date">{{ subcomment.created_at|datetime|safe }}</span>
                                                 </div>
