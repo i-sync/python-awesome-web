@@ -93,6 +93,10 @@ def get_categories():
     return categories
 
 def get_ip(request):
+    host = request.headers.get('X-FORWARDED-FOR',None)
+    if host is not None:
+        logger.info("Get remote_ip from header, host: " + host)
+        return host
     peername = request.transport.get_extra_info('peername')
     logger.info(peername)
     if peername is not None:
