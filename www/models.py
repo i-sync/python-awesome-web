@@ -32,7 +32,7 @@ class Blog(Model):
     category_id = StringField(ddl = 'varchar(50)')
     category_name = StringField(ddl = 'varchar(50)')
     view_count = IntegerField()
-    name = StringField(ddl = 'varchar(50)')
+    name = StringField(ddl = 'varchar(500)')
     summary = StringField(ddl = 'varchar(2048)')
     content = TextField()
     created_at = FloatField(default = time.time)
