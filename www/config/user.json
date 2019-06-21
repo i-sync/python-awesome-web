@@ -3,7 +3,7 @@
     "web_name": "Xpath Blog",
     "app_name": "Python Blog",
     "user_image": "/static/img/user.png",
-    "logo": "/static/img/user.png",
+    "logo": "//www.gravatar.com/avatar/6efff6bb5edc3498e00b020420597965?d=identicon&s=120",
     "welcome_message": "欢迎来到我的个人博客网站",
     "base_url": "http://www.xpath.org",
     "use_disqus": false,
