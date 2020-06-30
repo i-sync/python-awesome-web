@@ -163,7 +163,7 @@ def get_blog(id):
     if not blog:
         raise APIValueError('id', 'can not find blog id is :{}'.format(id))
     if not blog.enabled:
-        raise APIPermissionError('Permission Denied!!', 'Sorry, This articale can\'t find now, Please try it again later...')
+        raise APIResourceNotFoundError('id', 'Sorry, This articale can\'t find now, Please try it again later...')
 
     blog.view_count += 1
     yield from blog.update()
