@@ -14,6 +14,14 @@
                 page: data.page
             },
             methods: {
+                onChange: function (event, id) {
+                    console.log(event.target.checked, id)
+                    postJSON('/api/blogs/' + id + '/enabled', {'status': event.target.checked},  function(err,r ){
+                        if(err){
+                            return alert(err.message || err.error || err);
+                        }
+                    });
+                },
                 edit_blog: function (blog) {
                     location.assign('/manage/blogs/edit?id=' + blog.id);
                 },
@@ -78,6 +86,7 @@
                     <th class="eight wide">标题</th>
                     <th class="two wide">作者</th>
                     <th class="two wide">类别</th>
+                    <th class="two wide">可用</th>
                     <th class="two wide">创建时间</th>
                     <th class="two wide">操作</th>
                 </tr>
@@ -92,6 +101,9 @@
                     </td>
                     <td>
                         <span>${blog.category_name}</span>
+                    </td>
+                    <td>
+                        <input v-model="blog.enabled" v-on:click="onChange($event, blog.id)" type="checkbox">
                     </td>
                     <td>
                         <span>${blog.created_at.toDateTime()}</span>

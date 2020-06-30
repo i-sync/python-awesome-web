@@ -9,7 +9,7 @@ import re, time, json, hashlib, base64, asyncio
 import markdown2
 
 from apis import APIValueError, APIError, APIResourceNotFoundError, APIPermissionError, Page
-from coreweb import  get, post
+from coreweb import get, post
 
 from models import User, Comment, CommentAnonymous, Blog, Category, next_id
 from aiohttp import web
@@ -138,13 +138,13 @@ def index(*, page = '1'):
     ]
     '''
     page_index = get_page_index(page)
-    num = yield from Blog.find_number('count(id)')
+    num = yield from Blog.find_number('count(id)', where='enabled=?', args=[True])
     num -= 1 # remove about page : name="__about__"
     page = Page(num, page_index)
     if num <= 0:
         blogs = []
     else:
-        blogs = yield from Blog.find_all(where='name!=?', args=['__about__'], order_by='created_at desc', limit=(page.offset, page.limit))
+        blogs = yield from Blog.find_all(where='name!=? and enabled=?', args=['__about__', True], order_by='created_at desc', limit=(page.offset, page.limit))
         for blog in blogs:
             blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang'])
             #comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
@@ -162,6 +162,9 @@ def get_blog(id):
     logger.info('blog id is :{}'.format(id))
     if not blog:
         raise APIValueError('id', 'can not find blog id is :{}'.format(id))
+    if not blog.enabled:
+        raise APIPermissionError('Permission Denied!!', 'Sorry, This articale can\'t find now, Please try it again later...')
+
     blog.view_count += 1
     yield from blog.update()
     #comments = yield from Comment.find_all('blog_id=?', [id], order_by='created_at desc')
@@ -482,6 +485,21 @@ def api_edit_blog(request, *, id, name, summary, content, category_id):
     blog.category_id = category_id
     blog.category_name = category_name
     yield from blog.update()
+    return blog
+
+@post('/api/blogs/{id}/enabled')
+def api_enabled_blog(request, *, id, status):
+    check_admin(request)
+    blog = yield from Blog.find(id)
+    if not blog:
+        raise APIValueError('id', 'request id error, id : {}'.format(id))
+
+    if isinstance(status, str) and status.isalpha():
+        status = int(status.lower() == 'true')
+
+    blog.enabled = status
+    blog.updated_at = time.time()
+    await blog.update()
     return blog
 
 '''-----------comments-----------'''

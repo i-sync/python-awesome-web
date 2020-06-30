@@ -7,22 +7,25 @@ import asyncio
 
 __pool = None
 
+
 @asyncio.coroutine
 def create_pool(loop, **kw):
     logger.info('Create database connection pool...{}'.format(str(kw)))
     global __pool
     __pool = yield from aiomysql.create_pool(
-        host = kw.get('host', 'localhost'),
-        port = kw.get('port', 3306),
-        user = kw['user'],
-        password = kw['password'],
-        db = kw['database'],
-        charset = kw.get('charset', 'utf8'),
-        autocommit = kw.get('autocommit', True),
-        maxsize = kw.get('maxsize', 10),
-        minsize = kw.get('minsize', 1),
-        loop = loop
+        host=kw.get('host', 'localhost'),
+        port=kw.get('port', 3306),
+        user=kw['user'],
+        password=kw['password'],
+        db=kw['database'],
+        charset=kw.get('charset', 'utf8'),
+        autocommit=kw.get('autocommit', True),
+        maxsize=kw.get('maxsize', 10),
+        minsize=kw.get('minsize', 1),
+        loop=loop
     )
+
+
 @asyncio.coroutine
 def destory_pool():
     global __pool
@@ -32,7 +35,7 @@ def destory_pool():
 
 
 @asyncio.coroutine
-def select(sql, args, size = None):
+def select(sql, args, size=None):
     logger.info('SQL:{}\tARGS:{}'.format(sql, args))
     global __pool
     with (yield from __pool) as conn:
@@ -46,8 +49,9 @@ def select(sql, args, size = None):
         logger.info('rows returned: {}'.format(len(rs)))
         return rs
 
+
 @asyncio.coroutine
-def execute(sql, args, autocommit = True):
+def execute(sql, args, autocommit=True):
     logger.info(sql)
     global __pool
     with (yield from __pool) as conn:
@@ -67,6 +71,7 @@ def execute(sql, args, autocommit = True):
             raise
         return affected
 
+
 def create_args_string(num):
     L = []
     for n in range(num):
@@ -85,30 +90,35 @@ class Field(object):
     def __str__(self):
         return '<{}, {}:{}>'.format(self.__class__.__name__, self.column_type, self.name)
 
+
 class StringField(Field):
-    def __init__(self, name = None, primary_key = False, default = None, ddl = 'varchar(100)'):
+    def __init__(self, name=None, primary_key=False, default=None, ddl='varchar(100)'):
         super().__init__(name, ddl, primary_key, default)
 
 
 class BooleanField(Field):
 
-    def __init__(self, name =None, default = False):
+    def __init__(self, name=None, default=False):
         super().__init__(name, 'boolean', False, default)
+
 
 class IntegerField(Field):
 
-    def __init__(self, name = None, primary_key = False, default = 0):
+    def __init__(self, name=None, primary_key=False, default=0):
         super().__init__(name, 'bigint', primary_key, default)
+
 
 class FloatField(Field):
 
-    def __init__(self, name = None, primary_key = False, default = 0.0):
+    def __init__(self, name=None, primary_key=False, default=0.0):
         super().__init__(name, 'real', primary_key, default)
+
 
 class TextField(Field):
 
-    def __init__(self, name = None, default = None):
+    def __init__(self, name=None, default=None):
         super().__init__(name, 'text', False, default)
+
 
 class ModelMetaclass(type):
 
@@ -120,7 +130,7 @@ class ModelMetaclass(type):
         table_name = attrs.get('__table__', None) or name
         logger.info('found model : {} (table:{})'.format(name, table_name))
 
-        #get all field and primary key
+        # get all field and primary key
         mappings = dict()
         fields = []
         primary_key = None
@@ -148,11 +158,15 @@ class ModelMetaclass(type):
         attrs['__fields__'] = fields
 
         attrs['__select__'] = 'select `{}`, {} from `{}`'.format(primary_key, ', '.join(escaped_fields), table_name)
-        attrs['__insert__'] = 'insert into `{}` ({}, `{}`) values ({})'.format(table_name, ', '.join(escaped_fields), primary_key, create_args_string(len(escaped_fields) + 1))
-        attrs['__update__'] = 'update `{}` set {} where `{}` = ?'.format(table_name, ', '.join(map(lambda f: '`{}`=?'.format(mappings.get(f).name or f), fields)), primary_key)
+        attrs['__insert__'] = 'insert into `{}` ({}, `{}`) values ({})'.format(table_name, ', '.join(escaped_fields),
+                                                                               primary_key, create_args_string(
+                len(escaped_fields) + 1))
+        attrs['__update__'] = 'update `{}` set {} where `{}` = ?'.format(table_name, ', '.join(
+            map(lambda f: '`{}`=?'.format(mappings.get(f).name or f), fields)), primary_key)
         attrs['__delete__'] = 'delete from `{}` where `{}`=?'.format(table_name, primary_key)
 
         return type.__new__(cls, name, bases, attrs)
+
 
 class Model(dict, metaclass=ModelMetaclass):
 
@@ -166,7 +180,7 @@ class Model(dict, metaclass=ModelMetaclass):
             raise AttributeError(r'"Model" object has no attribute "{}"'.format(key))
 
     def __setattr__(self, key, value):
-        self[key]=value
+        self[key] = value
 
     def get_value(self, key):
         return getattr(self, key, None)
@@ -192,7 +206,7 @@ class Model(dict, metaclass=ModelMetaclass):
 
     @classmethod
     @asyncio.coroutine
-    def find_all(cls, where = None, args = None, **kwargs):
+    def find_all(cls, where=None, args=None, **kwargs):
         ''' find objects by where clause. '''
 
         sql = [cls.__select__]
@@ -226,7 +240,7 @@ class Model(dict, metaclass=ModelMetaclass):
 
     @classmethod
     @asyncio.coroutine
-    def find_number(cls, select_field, where = None, args = None):
+    def find_number(cls, select_field, where=None, args=None):
         ''' find number by select and where. '''
         sql = ['select {} _num_ from `{}`'.format(select_field, cls.__table__)]
 
@@ -237,7 +251,6 @@ class Model(dict, metaclass=ModelMetaclass):
         if len(rs) == 0:
             return None
         return rs[0]['_num_']
-
 
     @asyncio.coroutine
     def save(self):
