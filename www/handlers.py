@@ -499,7 +499,7 @@ def api_enabled_blog(request, *, id, status):
 
     blog.enabled = status
     blog.updated_at = time.time()
-    await blog.update()
+    yield from blog.update()
     return blog
 
 '''-----------comments-----------'''
