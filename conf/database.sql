@@ -33,7 +33,7 @@ create table blogs (
     `category_name` varchar(50),
     `view_count` int unsigned not null,
     `created_at` real not null,
-    `enabled` boolean,
+    `enabled` boolean not null default true,
     key `idx_created_at` (`created_at`),
     primary key (`id`)
 ) engine=innodb default charset=utf8;
