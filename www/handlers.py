@@ -146,7 +146,7 @@ def index(*, page = '1'):
     else:
         blogs = yield from Blog.find_all(where='name!=? and enabled=?', args=['__about__', True], order_by='created_at desc', limit=(page.offset, page.limit))
         for blog in blogs:
-            blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'toc'])
+            blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline'])
             #comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
             comments_count = yield from CommentAnonymous.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
             blog.comments_count = comments_count
@@ -170,8 +170,8 @@ def get_blog(id):
     #comments = yield from Comment.find_all('blog_id=?', [id], order_by='created_at desc')
     comments = yield from CommentAnonymous.find_all('blog_id=?', [id], order_by='created_at asc')
     for c in comments:
-        c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'toc'])
-    blog.html_content = markdown2.markdown(blog.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'toc'])
+        c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline'])
+    blog.html_content = markdown2.markdown(blog.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline'])
     return {
         '__template__': 'blog.html',
         'blog': blog,
@@ -231,7 +231,7 @@ def get_category_blogs(request, *, id, page='1'):
     else:
         blogs = yield from Blog.find_all(where='category_id=?',args=[id], order_by='created_at desc', limit=(page.offset, page.limit))
         for blog in blogs:
-            blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'toc'])
+            blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline'])
             comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
             blog.comments_count = comments_count
     return {
@@ -249,9 +249,9 @@ def get_about():
 
     comments = yield from CommentAnonymous.find_all('blog_id=?', [about[0].id], order_by='created_at asc')
     for c in comments:
-        c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'toc'])
+        c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline'])
 
-    about[0].html_content = markdown2.markdown(about[0].content, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'toc'])
+    about[0].html_content = markdown2.markdown(about[0].content, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline'])
     about[0].view_count += 1
     yield from about[0].update()
 
