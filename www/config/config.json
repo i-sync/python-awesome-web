@@ -1,11 +1,11 @@
 {
   "web_meta": {
-    "web_name": "Xpath Blog",
+    "web_name": "Viagle Blog",
     "app_name": "Python Blog",
     "user_image": "/static/img/user.png",
     "logo": "/static/img/user.png",
     "welcome_message": "欢迎来到我的个人博客网站",
-    "base_url": "http://www.xpath.org",
+    "base_url": "http://www.viagle.cn",
     "use_disqus": true,
     "anonymous_comment": true
    },
