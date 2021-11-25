@@ -70,7 +70,7 @@ class Page(object):
         left = 2
         right = self.page_count
 
-        if self.page_count > self.page_show:
+        if self.page_count - 2 > self.page_show:
             left = self.page_index - self.page_show // 2
             if left < 2:
                 left = 2
