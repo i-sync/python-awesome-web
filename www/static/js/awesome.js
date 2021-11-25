@@ -379,14 +379,14 @@ if (typeof(Vue)!=='undefined') {
                 <a v-if="p.page_index == 1" class="disabled item">1</a> \
                 <a v-else class="item" @click.prevent="gotoPage(1)" href="#">1</a> \
                 \
-                <a v-if="pl[0] > 2" class="disabled item">...</a> \
+                <a v-if="p.page_list[0] > 2" class="disabled item">...</a> \
                 \
-                <template v-for="pn in pl">\
+                <template v-for="pn in p.page_list">\
                     <a v-if="pn == p.page_index" class="disabled item" v-text="p.page_index"></a> \
                     <a v-else class="item" @click.prevent="gotoPage(pn)" href="#" v-text="pn"></a> \
                 </template>\
                 \
-                <a v-if="pl[p.page_show-1] < (p.page_count-1)" class="disabled item">...</a> \
+                <a v-if="p.page_list[p.page_show-1] < (p.page_count-1)" class="disabled item">...</a> \
                 \
                 <a v-if="(p.page_index == p.page_count) && (p.page_count != 1)" class="disabled item" v-text="p.page_count"></a> \
                 <a v-if="(p.page_index != p.page_count) && (p.page_count != 1) && (p.item_count != 0)" class="item" @click.prevent="gotoPage(p.page_count)" href="#" v-text="p.page_count"></a> \
@@ -395,28 +395,28 @@ if (typeof(Vue)!=='undefined') {
                 <a v-else class="disabled item"><i class="angle double right icon"></i></a> \
                 </div>',
         computed: {
-            pl: function() {
-                var left = 2;
-                var right = this.p.page_count;
-                var l = [];
-                if (this.p.page_count > this.p.page_show) {
-                    left = this.p.page_index - parseInt(this.p.page_show/2);
-                    if (left < 2) {
-                        left = 2;
-                    }
-                    right = left + this.p.page_show;
-                    if (right > this.p.page_count) {
-                        right = this.p.page_count;
-                        left = right - this.p.page_show;
-                    }
-                }
-                // 返回的列表不包含首项及末项
-                while (left < right) {
-                    l.push(left);
-                    left++;
-                }
-                return l;
-            }
+            // pl: function() {
+            //     var left = 2;
+            //     var right = this.p.page_count;
+            //     var l = [];
+            //     if (this.p.page_count - 2 > this.p.page_show) {
+            //         left = this.p.page_index - parseInt(this.p.page_show/2);
+            //         if (left < 2) {
+            //             left = 2;
+            //         }
+            //         right = left + this.p.page_show;
+            //         if (right > this.p.page_count) {
+            //             right = this.p.page_count;
+            //             left = right - this.p.page_show;
+            //         }
+            //     }
+            //     // 返回的列表不包含首项及末项
+            //     while (left < right) {
+            //         l.push(left);
+            //         left++;
+            //     }
+            //     return l;
+            // }
         }, 
         methods:{
             gotoPage: function(i) {

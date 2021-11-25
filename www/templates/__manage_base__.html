@@ -1,54 +1,5 @@
 <!DOCTYPE html>
 
-{% macro pagination(url, page) %}
-    <div class="ui pagination menu">
-        {% if page.has_prev %}
-            <a class="item" href="{{ url }}{{ page.page_index - 1 }}"><i class="angle double left icon"></i></a>
-        {% else %}
-            <a class="disabled item"><i class="angle double left icon"></i></a>
-        {% endif %}
-
-
-        {% if page.page_index == 1 %}
-            <a class="disabled item">1</a>
-        {% else %}
-            <a class="item" href="{{ url }}{{ 1 }}">1</a>
-        {% endif %}
-
-        {% if page.page_list %}
-            {% if page.page_list[0] > 2 %}
-                <a class="disabled item">...</a>
-            {% endif %}
-
-            {% for pl in page.page_list %}
-                {% if pl == page.page_index %}
-                    <a class="disabled item">{{ page.page_index }}</a>
-                {% else %}
-                    <a class="item" href="{{ url }}{{ pl }}">{{ pl }}</a>
-                {% endif %}
-            {% endfor %}
-
-            {% if page.page_list[-1] < (page.page_count-1) %}                
-                <a class="disabled item">...</a>
-            {% endif %}
-        {% endif %}
-
-        {% if page.page_count > 1 %}
-            {% if page.page_index == page.page_count %}
-                    <a class="disabled item">{{ page.page_index }}</a>
-            {% else %}
-                <a class="item" href="{{ url }}{{ page.page_count }}">{{ page.page_count }}</a>
-            {% endif %}
-        {% endif %}
-
-        {% if page.has_next %}
-            <a class="item" href="{{ url }}{{ page.page_index + 1 }}"><i class="angle double right icon"></i></a>
-        {% else %}
-            <a class="disabled item"><i class="angle double right icon"></i></a>
-        {% endif %}
-    </div>
-{% endmacro %}
-
 <html lang="en">
 <head>
     <meta charset="UTF-8">
