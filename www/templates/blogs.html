@@ -6,6 +6,19 @@
 
     <div class="ui container">
         <div class="ui relaxed divided items">
+            <div class="item">
+                <div class="content">
+                    
+                    <!-- ad2 -->
+                    <ins class="adsbygoogle"
+                    style="display:block"
+                    data-ad-client="ca-pub-4205539641412196"
+                    data-ad-slot="3166562118"
+                    data-ad-format="auto"
+                    data-full-width-responsive="true"></ins>
+
+                </div>
+            </div>
             {% for blog in blogs %}
                 <div class="item">
                     <div class="content ui container">
@@ -32,7 +45,7 @@
                         <div class="extra">
                             <a class="ui primary button" href="/blog/{{ blog.id }}">继续阅读 </a>
                         </div>
-
+                        
                         {% if (range(0, 10) | random) % 3 == 1  %}
                             <!-- ad2 -->
                             <ins class="adsbygoogle"
