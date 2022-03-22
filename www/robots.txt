@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallwo: /manage
+
+Sitemap: https://www.viagle.cn/sitemap.xml

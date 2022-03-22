@@ -5,7 +5,7 @@
     "user_image": "/static/img/user.png",
     "logo": "/static/img/user.png",
     "welcome_message": "欢迎来到我的个人博客网站",
-    "base_url": "http://www.viagle.cn",
+    "base_url": "https://www.viagle.cn",
     "use_disqus": true,
     "anonymous_comment": true
    },
