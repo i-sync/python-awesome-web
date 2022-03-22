@@ -2,7 +2,7 @@
 import sys
 import asyncio
 import aiomysql
-import datetime
+from datetime import datetime
 from config import configs
 
 
@@ -34,7 +34,7 @@ async def generate_sitemap():
         str_date = date_time.strftime("%Y-%m-%d")
         item = f'''
         <url>
-            <loc>{configs.web_mate.base_url}/blog/{id}/</loc>
+            <loc>{configs.web_meta.base_url}/blog/{id}</loc>
             <lastmod>{str_date}</lastmod>
             <changefreq>daily</changefreq>
             <priority>1.0</priority>
