@@ -16,6 +16,7 @@ create table users (
     `name` varchar(50) not null,
     `image` varchar(500) not null,
     `created_at` real not null,
+    `updated_at` real not null,
     unique key `idx_email` (`email`),
     key `idx_created_at` (`created_at`),
     primary key (`id`)
@@ -29,10 +30,12 @@ create table blogs (
     `name` varchar(500) not null,
     `summary` varchar(2048) not null,
     `content` mediumtext not null,
+    `tags` varchar(500) null,
     `category_id` varchar(50),
     `category_name` varchar(50),
     `view_count` int unsigned not null,
     `created_at` real not null,
+    `updated_at` real not null,
     `enabled` boolean not null default true,
     key `idx_created_at` (`created_at`),
     primary key (`id`)
@@ -67,9 +70,19 @@ create table comments_anonymous(
 ) engine=innodb default charset=utf8;
 
 create table categories(
-  `id` varchar (50) not null,
-  `name` varchar(50) not null,
-  `created_at` real not null,
-  key `idx_created_at` (`created_at`),
-  primary key (`id`)
+    `id` varchar (50) not null,
+    `name` varchar(50) not null,
+    `created_at` real not null,
+    `updated_at` real not null,
+    key `idx_created_at` (`created_at`),
+    primary key (`id`)
+) engine=innodb default charset=utf8;
+
+create table tags(
+    `id` varchar (50) not null,
+    `name` varchar(50) not null,
+    `created_at` real not null,
+    `updated_at` real not null,
+    key `idx_created_at` (`created_at`),
+    primary key (`id`)
 ) engine=innodb default charset=utf8;

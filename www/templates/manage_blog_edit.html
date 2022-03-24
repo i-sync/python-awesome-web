@@ -83,6 +83,10 @@
                 </select>
             </div>
             <div class="field">
+                <label>标签:</label>
+                <tags-input element-id="tags" v-model="tags" :existing-tags="alltags"></tags-input>
+            </div>
+            <div class="field">
                 <label>摘要:</label>
                 <textarea v-model="summary" v-on:keydown="captureTab" rows="10" name="summary" placeholder="摘要" ></textarea>
             </div>

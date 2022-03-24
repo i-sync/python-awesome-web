@@ -11,7 +11,7 @@ import markdown2
 from apis import APIValueError, APIError, APIResourceNotFoundError, APIPermissionError, Page
 from coreweb import get, post
 
-from models import User, Comment, CommentAnonymous, Blog, Category, next_id
+from models import User, Comment, CommentAnonymous, Blog, Category, Tags, next_id
 from aiohttp import web
 from config import configs
 
@@ -153,7 +153,8 @@ def index(*, page = '1'):
     return {
         '__template__': 'blogs.html',
         'page': page,
-        'blogs': blogs
+        'blogs': blogs,
+        'meta': {"keywords": configs.web_meta.keywords, "description": configs.web_meta.description }
     }
 
 @get('/blog/{id}')
@@ -169,6 +170,16 @@ def get_blog(id):
     yield from blog.update()
     #comments = yield from Comment.find_all('blog_id=?', [id], order_by='created_at desc')
     comments = yield from CommentAnonymous.find_all('blog_id=?', [id], order_by='created_at asc')
+
+    tags = []
+    if blog.tags:
+        for tag_id in blog.tags.splict(","):
+            tag = yield from Tags.find(tag_id)
+            if tag:
+                tags.append({"key": tag.id, "value": tag.name})
+
+    blog.tags = tags
+    blog.alltags = [{"key": tag.id, "value": tag.name} for tag in (yield from Tags.find_all())]
     for c in comments:
         c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline']).replace("<table>", "<table class=\"ui celled table\">")
     blog.html_content = markdown2.markdown(blog.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline']).replace("<table>", "<table class=\"ui celled table\">")
@@ -426,7 +437,7 @@ def api_blogs(*, page = '1'):
     return dict(page=p, blogs=blogs)
 
 @post('/api/blogs')
-def api_create_blog(request, *, name, summary, content, category_id):
+def api_create_blog(request, *, name, summary, content, category_id, tags):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
@@ -443,7 +454,22 @@ def api_create_blog(request, *, name, summary, content, category_id):
     else:
         category_name =''
 
-    blog = Blog(user_id = request.__user__.id, user_name= request.__user__.name, user_image = request.__user__.image, category_id = category_id, category_name = category_name, name = name.strip(), summary = summary.strip(), content = content.strip())
+    tag_ids = []
+    if tags.strip():
+        for tag in tags.splict(","):
+            rs = yield from Tags.find_all("name=?", [tag.strip()])
+            if len(rs) > 0:
+                tag_ids.append(rs[0].id)
+
+    blog = Blog(user_id = request.__user__.id,
+                user_name= request.__user__.name,
+                user_image = request.__user__.image,
+                category_id = category_id,
+                category_name = category_name,
+                name = name.strip(),
+                summary = summary.strip(),
+                content = content.strip(),
+                tags = ",".join(tag_ids))
     yield from blog.save()
     return blog
 
@@ -458,7 +484,7 @@ def api_delete_blog(request, *, id):
     raise APIValueError('id', 'id can not find...')
     
 @post('/api/blogs/{id}')
-def api_edit_blog(request, *, id, name, summary, content, category_id):
+def api_edit_blog(request, *, id, name, summary, content, category_id, tags):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
@@ -479,11 +505,20 @@ def api_edit_blog(request, *, id, name, summary, content, category_id):
     else:
         category_name =''
 
+    tag_ids = []
+    if tags.strip():
+        for tag in tags.splict(","):
+            rs = yield from Tags.find_all("name=?", [tag.strip()])
+            if len(rs) > 0:
+                tag_ids.append(rs[0].id)
+
     blog.name = name
     blog.summary = summary
     blog.content = content
     blog.category_id = category_id
     blog.category_name = category_name
+    blog.tags = ",".join(tag_ids)
+    blog.updated_at = time.time()
     yield from blog.update()
     return blog
 
@@ -659,6 +694,7 @@ def api_modify_password(request, *, password0, password1):
     #set new password
     sha1_password1 = '{}:{}'.format(user.id, password1)
     user.password = hashlib.sha1(sha1_password1.encode('utf-8')).hexdigest()
+    user.updated_at = time.time()
     yield from user.update()
 
     return dict(user_id=user.id)

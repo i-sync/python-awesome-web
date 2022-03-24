@@ -6,6 +6,8 @@
     "logo": "/static/img/user.png",
     "welcome_message": "欢迎来到我的个人博客网站",
     "base_url": "https://www.viagle.cn",
+    "keywords": "Python, Crawler, Sitecore, Math, .Net, Developer, CMS, Android",
+    "description": "个人博客网站, 专职.Net 开发, 业余Python开发, 爬虫, Sitecore内容管理系统定制开发",
     "use_disqus": true,
     "anonymous_comment": true
    },
