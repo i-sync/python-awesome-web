@@ -10,6 +10,7 @@
     function initVM(blog){
         var vm = new Vue({
             el: '#vm',
+            components: { "tags-input": VoerroTagsInput },
             data: blog,
             methods: {
                 submit: function (event){
@@ -47,9 +48,12 @@
             $('#loading').hide();
             initVM({
                 name: '',
+                description: '',
                 summary: '',
                 content: '',
                 category_id:'',
+                tags: [],
+                alltags: JSON.parse('{{alltags|safe}}')
             });
         }
     });
@@ -84,7 +88,11 @@
             </div>
             <div class="field">
                 <label>标签:</label>
-                <tags-input element-id="tags" v-model="tags" :existing-tags="alltags"></tags-input>
+                <tags-input element-id="tags" v-model="tags" :existing-tags="alltags" :typeahead="true"></tags-input>
+            </div>
+            <div class="field">
+                <label>MetaDescription:</label>
+                <textarea v-model="description" v-on:keydown="captureTab" rows="2" name="description" placeholder="MetaDescription"></textarea>
             </div>
             <div class="field">
                 <label>摘要:</label>

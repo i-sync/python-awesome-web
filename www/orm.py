@@ -61,6 +61,7 @@ def execute(sql, args, autocommit=True):
             cur = yield from conn.cursor()
             yield from cur.execute(sql.replace('?', '%s'), args)
             affected = cur.rowcount
+            lastrowid = cur.lastrowid
             yield from cur.close()
 
             if not autocommit:
@@ -69,7 +70,7 @@ def execute(sql, args, autocommit=True):
             if not autocommit:
                 yield from conn.rollback()
             raise
-        return affected
+        return affected, lastrowid
 
 
 def create_args_string(num):
@@ -256,21 +257,22 @@ class Model(dict, metaclass=ModelMetaclass):
     def save(self):
         args = list(map(self.get_value_or_default, self.__fields__))
         args.append(self.get_value_or_default(self.__primary_key__))
-        rows = yield from execute(self.__insert__, args)
+        rows, lastrowid = yield from execute(self.__insert__, args)
         if rows != 1:
             logger.warning('Failed to insert record: affected rows: {}'.format(rows))
+        return rows, lastrowid
 
     @asyncio.coroutine
     def update(self):
         args = list(map(self.get_value, self.__fields__))
         args.append(self.get_value(self.__primary_key__))
-        rows = yield from execute(self.__update__, args)
+        rows, _ = yield from execute(self.__update__, args)
         if rows != 1:
             logger.warning('Failed to update by primary key: affected rows: {}'.format(rows))
 
     @asyncio.coroutine
     def remove(self):
         args = [self.get_value(self.__primary_key__)]
-        rows = yield from execute(self.__delete__, args)
+        rows, _ = yield from execute(self.__delete__, args)
         if rows != 1:
             logger.warning('Failed to remove by primary key: affected rows: {}'.format(rows))

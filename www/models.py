@@ -34,6 +34,7 @@ class Blog(Model):
     category_name = StringField(ddl = 'varchar(50)')
     view_count = IntegerField()
     name = StringField(ddl = 'varchar(500)')
+    description = StringField(ddl = 'varchar(2048)')
     summary = StringField(ddl = 'varchar(2048)')
     content = TextField()
     tags = StringField(ddl = 'varchar(500)')

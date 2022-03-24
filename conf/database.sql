@@ -28,6 +28,7 @@ create table blogs (
     `user_name` varchar(50) not null,
     `user_image` varchar(500) not null,
     `name` varchar(500) not null,
+    `description` varchar(2048) null,
     `summary` varchar(2048) not null,
     `content` mediumtext not null,
     `tags` varchar(500) null,
@@ -79,7 +80,7 @@ create table categories(
 ) engine=innodb default charset=utf8;
 
 create table tags(
-    `id` varchar (50) not null,
+    `id` int not null AUTO_INCREMENT,
     `name` varchar(50) not null,
     `created_at` real not null,
     `updated_at` real not null,

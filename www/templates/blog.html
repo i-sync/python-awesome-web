@@ -1,5 +1,10 @@
 {% extends '__base__.html' %}
 
+{% block meta %}
+    <meta name="keywords" content="{{blog.tags}}"/>
+    <meta name="description" content="{{blog.description}}"/>
+{% endblock %}
+
 {% block title %} {{ blog.name }} {% endblock %}
 
 {% block beforehead %}
@@ -57,7 +62,7 @@
         <!--iv class="ui text container"-->
         <h2>{{ blog.name }}</h2>
         <span class="ui metadata">
-            由<a href="/user/{{blog.user_id}}">{{blog.user_name}}</a> 发表于 {{ blog.created_at|datetime|safe }} |
+            由<a href="/user/{{blog.user_id}}">{{blog.user_name}}</a> 发表于 {{ blog.created_at|datetime|safe }} | 更新于 {{ blog.updated_at|datetime|safe }} |
             文章分类:<a href="/category/{{blog.category_id}}">{{blog.category_name}}</a> |
             <i class="unhide icon"></i> {{blog.view_count}} 次阅读 |
             {% if not web_meta.use_disqus %}

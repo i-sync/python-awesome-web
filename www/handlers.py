@@ -138,8 +138,7 @@ def index(*, page = '1'):
     ]
     '''
     page_index = get_page_index(page)
-    num = yield from Blog.find_number('count(id)', where='enabled=?', args=[True])
-    num -= 1 # remove about page : name="__about__"
+    num = yield from Blog.find_number('count(id)', where='name!=? and enabled=?', args=['__about__', True])
     page = Page(num, page_index)
     if num <= 0:
         blogs = []
@@ -173,13 +172,12 @@ def get_blog(id):
 
     tags = []
     if blog.tags:
-        for tag_id in blog.tags.splict(","):
+        for tag_id in blog.tags.split(","):
             tag = yield from Tags.find(tag_id)
             if tag:
                 tags.append({"key": tag.id, "value": tag.name})
 
-    blog.tags = tags
-    blog.alltags = [{"key": tag.id, "value": tag.name} for tag in (yield from Tags.find_all())]
+    blog.tags = ",".join([x["value"] for x in tags])
     for c in comments:
         c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline']).replace("<table>", "<table class=\"ui celled table\">")
     blog.html_content = markdown2.markdown(blog.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline']).replace("<table>", "<table class=\"ui celled table\">")
@@ -287,7 +285,8 @@ def manage_create_blog():
     return {
         '__template__': 'manage_blog_edit.html',
         'id': '',
-        'action': '/api/blogs'
+        'action': '/api/blogs',
+        'alltags': json.dumps([{"key": tag.id, "value": tag.name} for tag in (yield from Tags.find_all())])
     }
 
 @get('/manage/blogs/edit')
@@ -424,6 +423,17 @@ def authenticate(*, email, password, remember):
 @get('/api/blogs/{id}')
 def api_get_blog(*, id):
     blog = yield from Blog.find(id)
+    
+    tags = []
+    if blog.tags:
+        for tag_id in blog.tags.split(","):
+            tag = yield from Tags.find(tag_id)
+            if tag:
+                tags.append({"key": tag.id, "value": tag.name})
+
+    blog.tags = tags
+    blog.alltags = [{"key": tag.id, "value": tag.name} for tag in (yield from Tags.find_all())]
+
     return blog
 
 @get('/api/blogs')
@@ -437,7 +447,7 @@ def api_blogs(*, page = '1'):
     return dict(page=p, blogs=blogs)
 
 @post('/api/blogs')
-def api_create_blog(request, *, name, summary, content, category_id, tags):
+def api_create_blog(request, *, name, description, summary, content, category_id, tags):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
@@ -455,11 +465,20 @@ def api_create_blog(request, *, name, summary, content, category_id, tags):
         category_name =''
 
     tag_ids = []
-    if tags.strip():
-        for tag in tags.splict(","):
-            rs = yield from Tags.find_all("name=?", [tag.strip()])
-            if len(rs) > 0:
-                tag_ids.append(rs[0].id)
+    if len(tags) > 0:
+        for tag in tags:
+            if tag["key"]:
+                rs = yield from Tags.find(tag["key"])
+                if rs:
+                    tag_ids.append(rs.id)
+            else:
+                rs =  yield from Tags.find_all("name=?", [tag["value"]])
+                if len(rs) > 0:
+                    tag_ids.append(rs[0].id)
+                else: #create new tag
+                    tag = Tags(name=tag["value"])
+                    rows, lastrowid = yield from tag.save()
+                    tag_ids.append(lastrowid)
 
     blog = Blog(user_id = request.__user__.id,
                 user_name= request.__user__.name,
@@ -467,9 +486,10 @@ def api_create_blog(request, *, name, summary, content, category_id, tags):
                 category_id = category_id,
                 category_name = category_name,
                 name = name.strip(),
+                description = description.strip(),
                 summary = summary.strip(),
                 content = content.strip(),
-                tags = ",".join(tag_ids))
+                tags = ",".join([str(id) for id in tag_ids]))
     yield from blog.save()
     return blog
 
@@ -484,7 +504,7 @@ def api_delete_blog(request, *, id):
     raise APIValueError('id', 'id can not find...')
     
 @post('/api/blogs/{id}')
-def api_edit_blog(request, *, id, name, summary, content, category_id, tags):
+def api_edit_blog(request, *, id, name, description, summary, content, category_id, tags):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
@@ -506,18 +526,28 @@ def api_edit_blog(request, *, id, name, summary, content, category_id, tags):
         category_name =''
 
     tag_ids = []
-    if tags.strip():
-        for tag in tags.splict(","):
-            rs = yield from Tags.find_all("name=?", [tag.strip()])
-            if len(rs) > 0:
-                tag_ids.append(rs[0].id)
+    if len(tags) > 0:
+        for tag in tags:
+            if tag["key"]:
+                rs = yield from Tags.find(tag["key"])
+                if rs:
+                    tag_ids.append(rs.id)
+            else:
+                rs =  yield from Tags.find_all("name=?", [tag["value"]])
+                if len(rs) > 0:
+                    tag_ids.append(rs[0].id)
+                else: #create new tag
+                    tag = Tags(name=tag["value"])
+                    rows, lastrowid = yield from tag.save()
+                    tag_ids.append(lastrowid)
 
     blog.name = name
+    blog.description = description
     blog.summary = summary
     blog.content = content
     blog.category_id = category_id
     blog.category_name = category_name
-    blog.tags = ",".join(tag_ids)
+    blog.tags = ",".join([str(id) for id in tag_ids])
     blog.updated_at = time.time()
     yield from blog.update()
     return blog
