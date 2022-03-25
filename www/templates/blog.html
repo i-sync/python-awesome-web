@@ -1,7 +1,7 @@
 {% extends '__base__.html' %}
 
 {% block meta %}
-    <meta name="keywords" content="{{blog.tags}}"/>
+    <meta name="keywords" content="{{blog.keywords}}"/>
     <meta name="description" content="{{blog.description}}"/>
 {% endblock %}
 
@@ -69,6 +69,11 @@
                 <i class="comment icon"></i> {{ comments | length }} 条评论
             {% endif %}
         </span>
+        <div>
+            {% for tag in blog.tags %}
+                <a class="ui mini {{tag.color}} label">{{tag.value}}</a>
+            {% endfor %}
+        </div>
         <div class="ui hidden divider"></div>
 
         <p>{{ blog.html_content | safe }}</p>

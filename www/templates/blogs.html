@@ -45,6 +45,11 @@
                                 <i class="comment icon"></i> <span>{{blog.comments_count}} 条评论</span>
                             {% endif %}
                         </div>
+                        <div>
+                            {% for tag in blog.tags %}
+                                <a class="ui tiny {{tag.color}} label">{{tag.value}}</a>
+                            {% endfor %}
+                        </div>
                         <div class="ui hidden divider"></div>
                         <div class="description">
                             {{ blog.html_summary | safe }}
