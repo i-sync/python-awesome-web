@@ -60,7 +60,7 @@
         <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 
         <!--iv class="ui text container"-->
-        <h2>{{ blog.name }}</h2>
+        <h1>{{ blog.name }}</h1>
         <span class="ui metadata">
             由<a href="/user/{{blog.user_id}}">{{blog.user_name}}</a> 发表于 {{ blog.created_at|datetime|safe }} | 更新于 {{ blog.updated_at|datetime|safe }} |
             文章分类:<a href="/category/{{blog.category_id}}">{{blog.category_name}}</a> |

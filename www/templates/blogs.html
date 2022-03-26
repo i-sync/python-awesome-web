@@ -28,7 +28,7 @@
             {% for blog in blogs %}
                 <div class="item">
                     <div class="content ui container">
-                        <h2><a href="/blog/{{ blog.id }}">{{ blog.name }}</a></h2>
+                        <h1><a href="/blog/{{ blog.id }}">{{ blog.name }}</a></h1>
                         <div class="ui metadata">
                             <span>此文由</span>
                             <a href="/user/{{blog.user_id}}">{{blog.user_name}}</a>
