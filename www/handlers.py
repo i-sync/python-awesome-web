@@ -255,6 +255,15 @@ def get_category_blogs(request, *, id, page='1'):
             blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline']).replace("<table>", "<table class=\"ui celled table\">")
             comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
             blog.comments_count = comments_count
+
+            #get blog tags
+            tags = []
+            if blog.tags:
+                for tag_id in blog.tags.split(","):
+                    tag = yield from Tags.find(tag_id)
+                    if tag:
+                        tags.append({"key": tag.id, "value": tag.name, "color": COLORS[tag.id%len(COLORS)]})
+            blog.tags = tags
     return {
         '__template__': 'category.html',
         'page': page,

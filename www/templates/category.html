@@ -5,8 +5,21 @@
 {% block content %}
 
     <div class="ui container">
-         <h2 class="ui dividing header">分类: {{category.name}}</h2>
+        <h1 class="ui dividing header">分类: {{category.name}}</h1>
 
+        <div class="item">
+            <div class="content">
+                
+                <!-- ad2 -->
+                <ins class="adsbygoogle"
+                style="display:block"
+                data-ad-client="ca-pub-4205539641412196"
+                data-ad-slot="3166562118"
+                data-ad-format="auto"
+                data-full-width-responsive="true"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        </div>
         {% for blog in blogs %}
             <article>
                 <h2><a href="/blog/{{ blog.id }}">{{ blog.name }}</a> </h2>
@@ -20,6 +33,11 @@
                         <i class="comment icon"></i> {{blog.comments_count}} 条评论
                     {% endif %}
                 </span>
+                <div>
+                    {% for tag in blog.tags %}
+                        <a class="ui tiny {{tag.color}} label">{{tag.value}}</a>
+                    {% endfor %}
+                </div>
                 <div class="ui hidden divider"></div>
 
                 {{ blog.html_summary | safe }}
@@ -27,6 +45,18 @@
                 <div class="ui hidden divider"></div>
 
                 <p><a class="ui primary button" href="/blog/{{ blog.id }}">继续阅读 </a> </p>
+                
+                {% if (range(0, 10) | random) % 3 == 1  %}
+                    <!-- ad2 -->
+                    <ins class="adsbygoogle"
+                    style="display:block"
+                    data-ad-client="ca-pub-4205539641412196"
+                    data-ad-slot="3166562118"
+                    data-ad-format="auto"
+                    data-full-width-responsive="true"></ins>
+                    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+                {% endif %}
+
             </article>
             <div class="ui section divider"></div>
         {% endfor %}
