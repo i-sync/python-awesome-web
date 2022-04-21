@@ -19,8 +19,8 @@ class User(Model):
     admin = BooleanField()
     name = StringField(ddl = 'varchar(50)')
     image = StringField(ddl = 'varchar(500)')
-    created_at = FloatField(default = time.time())
-    updated_at = FloatField(default = time.time())
+    created_at = FloatField(default = time.time)
+    updated_at = FloatField(default = time.time)
 
 
 class Blog(Model):
@@ -38,8 +38,8 @@ class Blog(Model):
     summary = StringField(ddl = 'varchar(2048)')
     content = TextField()
     tags = StringField(ddl = 'varchar(500)')
-    created_at = FloatField(default = time.time())
-    updated_at = FloatField(default = time.time())
+    created_at = FloatField(default = time.time)
+    updated_at = FloatField(default = time.time)
     enabled = BooleanField()
 
 class Comment(Model):
@@ -51,7 +51,7 @@ class Comment(Model):
     user_name = StringField(ddl = 'varchar(50)')
     user_image = StringField(ddl = 'varchar(500)')
     content = TextField()
-    created_at = FloatField(default = time.time())
+    created_at = FloatField(default = time.time)
 
 class CommentAnonymous(Model):
     __table__ = 'comments_anonymous'
@@ -66,7 +66,7 @@ class CommentAnonymous(Model):
     avatar = StringField(ddl = 'varchar(200)')
     ip = StringField(ddl = 'varchar(50)')
     content = TextField()
-    created_at = FloatField(default = time.time())
+    created_at = FloatField(default = time.time)
 
 
 class Category(Model):
@@ -74,12 +74,12 @@ class Category(Model):
 
     id = StringField(primary_key = True, default = next_id, ddl = 'varchar(50')
     name = StringField(ddl = 'varchar(50)')
-    created_at = FloatField(default = time.time())
-    updated_at = FloatField(default = time.time())
+    created_at = FloatField(default = time.time)
+    updated_at = FloatField(default = time.time)
 
 class Tags(Model):
     __table__ = 'tags'
     id = IntegerField(primary_key=True)
     name = StringField(ddl = 'varchar(50)')
-    created_at = FloatField(default = time.time())
-    updated_at = FloatField(default = time.time())
+    created_at = FloatField(default = time.time)
+    updated_at = FloatField(default = time.time)
