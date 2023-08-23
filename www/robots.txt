@@ -3,4 +3,4 @@ Allow: /
 Disallow: /manage
 Disallow: /api
 
-Sitemap: https://www.viagle.cn/sitemap.xml
+Sitemap: https://www.knit.bid/sitemap.xml
