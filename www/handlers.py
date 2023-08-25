@@ -54,8 +54,8 @@ def user2cookie(user, max_age):
     return '-'.join(L)
 
 
-@asyncio.coroutine
-def cookie2user(cookie_str):
+
+async def cookie2user(cookie_str):
     '''
     Parse cookie and load user if cookie is valid
     :param cookie_str:
@@ -71,7 +71,7 @@ def cookie2user(cookie_str):
         uid, expires, sha1 = L
         if int(expires) < time.time():
             return None
-        user = yield from User.find(uid)
+        user = await User.find(uid)
         if user is None:
             return None
 
@@ -89,9 +89,9 @@ def text2html(text):
     lines = map(lambda s: '<p>{}</p>'.format(s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')), filter(lambda s: s.strip() != '', text.split('\n')))
     return ''.join(lines)
 
-@asyncio.coroutine
-def get_categories():
-    categories = yield from Category.find_all(order_by='created_at desc')
+
+async def get_categories():
+    categories = await Category.find_all(order_by='created_at desc')
     return categories
 
 def get_ip(request):
@@ -115,7 +115,7 @@ def get_ip(request):
 @get('/')
 @asyncio.coroutine
 def index(request):
-    users = yield from User.find_all()
+    users = await User.find_all()
     return {
         '__template__': 'test.html',
         'users': users
@@ -127,7 +127,7 @@ def index(request):
 ===================== client page =======================
 '''
 @get('/')
-def index(*, page = '1'):
+async def index(*, page = '1'):
     '''
     summary = 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
     blogs = [
@@ -140,23 +140,23 @@ def index(*, page = '1'):
     ]
     '''
     page_index = get_page_index(page)
-    num = yield from Blog.find_number('count(id)', where='name!=? and enabled=?', args=['__about__', True])
+    num = await Blog.find_number('count(id)', where='name!=? and enabled=?', args=['__about__', True])
     page = Page(num, page_index)
     if num <= 0:
         blogs = []
     else:
-        blogs = yield from Blog.find_all(where='name!=? and enabled=?', args=['__about__', True], order_by='created_at desc', limit=(page.offset, page.limit))
+        blogs = await Blog.find_all(where='name!=? and enabled=?', args=['__about__', True], order_by='created_at desc', limit=(page.offset, page.limit))
         for blog in blogs:
             blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline']).replace("<table>", "<table class=\"ui celled table\">")
-            #comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
-            comments_count = yield from CommentAnonymous.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
+            #comments_count = await Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
+            comments_count = await CommentAnonymous.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
             blog.comments_count = comments_count
 
             #get blog tags
             tags = []
             if blog.tags:
                 for tag_id in blog.tags.split(","):
-                    tag = yield from Tags.find(tag_id)
+                    tag = await Tags.find(tag_id)
                     if tag:
                         tags.append({"key": tag.id, "value": tag.name, "color": COLORS[tag.id%len(COLORS)]})
             blog.tags = tags
@@ -168,8 +168,8 @@ def index(*, page = '1'):
     }
 
 @get('/blog/{id}')
-def get_blog(id):
-    blog = yield from Blog.find(id)
+async def get_blog(id):
+    blog = await Blog.find(id)
     logger.info('blog id is :{}'.format(id))
     if not blog:
         raise APIValueError('id', 'can not find blog id is :{}'.format(id))
@@ -177,14 +177,14 @@ def get_blog(id):
         raise APIResourceNotFoundError('id', 'Sorry, This articale can\'t find now, Please try it again later...')
 
     blog.view_count += 1
-    yield from blog.update()
-    #comments = yield from Comment.find_all('blog_id=?', [id], order_by='created_at desc')
-    comments = yield from CommentAnonymous.find_all('blog_id=?', [id], order_by='created_at asc')
+    await blog.update()
+    #comments = await Comment.find_all('blog_id=?', [id], order_by='created_at desc')
+    comments = await CommentAnonymous.find_all('blog_id=?', [id], order_by='created_at asc')
 
     tags = []
     if blog.tags:
         for tag_id in blog.tags.split(","):
-            tag = yield from Tags.find(tag_id)
+            tag = await Tags.find(tag_id)
             if tag:
                 tags.append({"key": tag.id, "value": tag.name, "color": COLORS[tag.id%len(COLORS)]})
 
@@ -229,8 +229,8 @@ def signout(request):
     return r
 
 @get('/user/{id}')
-def get_user(*, id):
-    user = yield from User.find(id)
+async def get_user(*, id):
+    user = await User.find(id)
     if not user:
         raise APIValueError('id', 'can not find user, id:{}'.format(id))
     return {
@@ -239,28 +239,28 @@ def get_user(*, id):
     }
 
 @get('/category/{id}')
-def get_category_blogs(request, *, id, page='1'):
-    category = yield from Category.find(id)
+async def get_category_blogs(request, *, id, page='1'):
+    category = await Category.find(id)
     if not category:
         raise APIValueError('category id', 'can not find category, by id:{}'.format(id))
 
     page_index = get_page_index(page)
-    num = yield from Blog.find_number('count(id)', 'category_id=?', [id])
+    num = await Blog.find_number('count(id)', 'category_id=?', [id])
     page = Page(num, page_index)
     if num == 0:
         blogs = []
     else:
-        blogs = yield from Blog.find_all(where='category_id=?',args=[id], order_by='created_at desc', limit=(page.offset, page.limit))
+        blogs = await Blog.find_all(where='category_id=?',args=[id], order_by='created_at desc', limit=(page.offset, page.limit))
         for blog in blogs:
             blog.html_summary = markdown2.markdown(blog.summary, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline']).replace("<table>", "<table class=\"ui celled table\">")
-            comments_count = yield from Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
+            comments_count = await Comment.find_number(select_field='count(id)', where='blog_id=?', args=[blog.id])
             blog.comments_count = comments_count
 
             #get blog tags
             tags = []
             if blog.tags:
                 for tag_id in blog.tags.split(","):
-                    tag = yield from Tags.find(tag_id)
+                    tag = await Tags.find(tag_id)
                     if tag:
                         tags.append({"key": tag.id, "value": tag.name, "color": COLORS[tag.id%len(COLORS)]})
             blog.tags = tags
@@ -272,18 +272,18 @@ def get_category_blogs(request, *, id, page='1'):
     }
 
 @get('/about')
-def get_about():
-    about = yield from Blog.find_all(where='name=?', args=['__about__'])
+async def get_about():
+    about = await Blog.find_all(where='name=?', args=['__about__'])
     if len(about) == 0:
         raise APIResourceNotFoundError('about', 'can not find about page.')
 
-    comments = yield from CommentAnonymous.find_all('blog_id=?', [about[0].id], order_by='created_at asc')
+    comments = await CommentAnonymous.find_all('blog_id=?', [about[0].id], order_by='created_at asc')
     for c in comments:
         c.html_content = markdown2.markdown(c.content, extras=['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline']).replace("<table>", "<table class=\"ui celled table\">")
 
     about[0].html_content = markdown2.markdown(about[0].content, extras = ['code-friendly', 'fenced-code-blocks', 'highlightjs-lang', 'tables', 'break-on-newline']).replace("<table>", "<table class=\"ui celled table\">")
     about[0].view_count += 1
-    yield from about[0].update()
+    await about[0].update()
 
 
     return {
@@ -302,12 +302,12 @@ def get_about():
 '''
 
 @get('/manage/blogs/create')
-def manage_create_blog():
+async def manage_create_blog():
     return {
         '__template__': 'manage_blog_edit.html',
         'id': '',
         'action': '/api/blogs',
-        'alltags': json.dumps([{"key": tag.id, "value": tag.name} for tag in (yield from Tags.find_all())])
+        'alltags': json.dumps([{"key": tag.id, "value": tag.name} for tag in (await Tags.find_all())])
     }
 
 @get('/manage/blogs/edit')
@@ -353,7 +353,7 @@ def manage_create_categories():
         'id': '',
         'action': '/api/categories'
     }
-    
+
 @get('/manage/categories/edit')
 def manage_edit_categories(*, id):
     return {
@@ -372,21 +372,21 @@ def manage_edit_categories(*, id):
 '''
 
 @get('/api/users')
-def api_get_users(request, *, page = '1'):
+async def api_get_users(request, *, page = '1'):
     '''get all users'''
     check_admin(request)
     page_index = get_page_index(page)
-    num = yield from User.find_number('count(id)')
+    num = await User.find_number('count(id)')
     p = Page(num, page_index)
     if num == 0:
         return dict(page = p, users = ())
-    users = yield from User.find_all(order_by='created_at desc', limit = (p.offset, p.limit))
+    users = await User.find_all(order_by='created_at desc', limit = (p.offset, p.limit))
     for u in users:
         u.password = '*' * 8
     return dict(page = p, users = users)
 
 @post('/api/users')
-def api_register_user(*, email, name, password):
+async def api_register_user(*, email, name, password):
     if not name or not name.strip():
         raise APIValueError('name')
     if not email or not _RE_EMAIL.match(email):
@@ -394,7 +394,7 @@ def api_register_user(*, email, name, password):
     if not password or not _RE_SHA256.match(password):
         raise APIValueError('password')
 
-    users = yield from User.find_all('email=?', [email])
+    users = await User.find_all('email=?', [email])
     if len(users) > 0:
         raise APIError('Register failed', 'email', 'Email is already in use.')
 
@@ -402,7 +402,7 @@ def api_register_user(*, email, name, password):
     sha1_password = '{}:{}'.format(uid, password)
     logger.info('register password:{}, sha1_password:{}'.format(password, sha1_password))
     user = User(id=uid, name= name.strip(), email= email, password = hashlib.sha1(sha1_password.encode('utf-8')).hexdigest(), image='http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(name.encode('utf-8')).hexdigest()))
-    yield from user.save()
+    await user.save()
 
     r = web.Response()
     r.set_cookie(COOKIE_NAME, user2cookie(user, 86400), max_age=86400, httponly=True)
@@ -412,12 +412,12 @@ def api_register_user(*, email, name, password):
     return r
 
 @post('/api/authenticate')
-def authenticate(*, email, password, remember):
+async def authenticate(*, email, password, remember):
     if not email:
         raise APIValueError('email', 'Invalid Email')
     if not password:
         raise APIValueError('password', 'Invalid Password')
-    users = yield from User.find_all('email=?', [email])
+    users = await User.find_all('email=?', [email])
     if len(users) == 0:
         raise APIValueError('email', 'Email not exist')
 
@@ -442,33 +442,33 @@ def authenticate(*, email, password, remember):
 
 '''-----------blogs------------'''
 @get('/api/blogs/{id}')
-def api_get_blog(*, id):
-    blog = yield from Blog.find(id)
-    
+async def api_get_blog(*, id):
+    blog = await Blog.find(id)
+
     tags = []
     if blog.tags:
         for tag_id in blog.tags.split(","):
-            tag = yield from Tags.find(tag_id)
+            tag = await Tags.find(tag_id)
             if tag:
                 tags.append({"key": tag.id, "value": tag.name})
 
     blog.tags = tags
-    blog.alltags = [{"key": tag.id, "value": tag.name} for tag in (yield from Tags.find_all())]
+    blog.alltags = [{"key": tag.id, "value": tag.name} for tag in (await Tags.find_all())]
 
     return blog
 
 @get('/api/blogs')
-def api_blogs(*, page = '1'):
+async def api_blogs(*, page = '1'):
     page_index = get_page_index(page)
-    num = yield from Blog.find_number('count(id)')
+    num = await Blog.find_number('count(id)')
     p = Page(num, page_index)
     if num == 0:
         return dict(page = p, blogs = ())
-    blogs = yield from Blog.find_all(order_by='created_at desc', limit=(p.offset, p.limit))
+    blogs = await Blog.find_all(order_by='created_at desc', limit=(p.offset, p.limit))
     return dict(page=p, blogs=blogs)
 
 @post('/api/blogs')
-def api_create_blog(request, *, name, description, summary, content, category_id, tags):
+async def api_create_blog(request, *, name, description, summary, content, category_id, tags):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
@@ -476,8 +476,8 @@ def api_create_blog(request, *, name, description, summary, content, category_id
         raise APIValueError('summary', 'summary can not be empty')
     if not content or not content.strip():
         raise APIValueError('content', 'content can not be empty')
-    
-    category = yield from Category.find(category_id)
+
+    category = await Category.find(category_id)
     if category:
         #raise APIValueError('category', 'can not find category, category_id:{}'.format(category_id))
         category_id= category.id
@@ -489,16 +489,16 @@ def api_create_blog(request, *, name, description, summary, content, category_id
     if len(tags) > 0:
         for tag in tags:
             if tag["key"]:
-                rs = yield from Tags.find(tag["key"])
+                rs = await Tags.find(tag["key"])
                 if rs:
                     tag_ids.append(rs.id)
             else:
-                rs =  yield from Tags.find_all("name=?", [tag["value"]])
+                rs =  await Tags.find_all("name=?", [tag["value"]])
                 if len(rs) > 0:
                     tag_ids.append(rs[0].id)
                 else: #create new tag
                     tag = Tags(name=tag["value"])
-                    rows, lastrowid = yield from tag.save()
+                    rows, lastrowid = await tag.save()
                     tag_ids.append(lastrowid)
 
     blog = Blog(user_id = request.__user__.id,
@@ -511,21 +511,21 @@ def api_create_blog(request, *, name, description, summary, content, category_id
                 summary = summary.strip(),
                 content = content.strip(),
                 tags = ",".join([str(id) for id in tag_ids]))
-    yield from blog.save()
+    await blog.save()
     return blog
 
 @post('/api/blogs/{id}/delete')
-def api_delete_blog(request, *, id):
+async def api_delete_blog(request, *, id):
     logger.info('delete blog id: {}'.format(id))
     check_admin(request)
-    blog = yield from Blog.find(id)
+    blog = await Blog.find(id)
     if blog:
-        yield from blog.remove()
+        await blog.remove()
         return blog
     raise APIValueError('id', 'id can not find...')
-    
+
 @post('/api/blogs/{id}')
-def api_edit_blog(request, *, id, name, description, summary, content, category_id, tags):
+async def api_edit_blog(request, *, id, name, description, summary, content, category_id, tags):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
@@ -534,11 +534,11 @@ def api_edit_blog(request, *, id, name, description, summary, content, category_
     if not content or not content.strip():
         raise APIValueError('content', 'content can not be empty')
     #blog = Blog(user_id = request.__user__.id, user_name= request.__user__.name, user_image = request.__user__.image, name = name.strip(), summary = summary.strip(), content = content.strip())
-    blog = yield from Blog.find(id)
+    blog = await Blog.find(id)
     if not blog:
         raise APIValueError('id', 'request path error, id : {}'.format(id))
 
-    category = yield from Category.find(category_id)
+    category = await Category.find(category_id)
     if category:
         #raise APIValueError('category', 'can not find category, category_id:{}'.format(category_id))
         category_id= category.id
@@ -550,16 +550,16 @@ def api_edit_blog(request, *, id, name, description, summary, content, category_
     if len(tags) > 0:
         for tag in tags:
             if tag["key"]:
-                rs = yield from Tags.find(tag["key"])
+                rs = await Tags.find(tag["key"])
                 if rs:
                     tag_ids.append(rs.id)
             else:
-                rs =  yield from Tags.find_all("name=?", [tag["value"]])
+                rs =  await Tags.find_all("name=?", [tag["value"]])
                 if len(rs) > 0:
                     tag_ids.append(rs[0].id)
                 else: #create new tag
                     tag = Tags(name=tag["value"])
-                    rows, lastrowid = yield from tag.save()
+                    rows, lastrowid = await tag.save()
                     tag_ids.append(lastrowid)
 
     blog.name = name
@@ -570,13 +570,13 @@ def api_edit_blog(request, *, id, name, description, summary, content, category_
     blog.category_name = category_name
     blog.tags = ",".join([str(id) for id in tag_ids])
     blog.updated_at = time.time()
-    yield from blog.update()
+    await blog.update()
     return blog
 
 @post('/api/blogs/{id}/enabled')
-def api_enabled_blog(request, *, id, status):
+async def api_enabled_blog(request, *, id, status):
     check_admin(request)
-    blog = yield from Blog.find(id)
+    blog = await Blog.find(id)
     if not blog:
         raise APIValueError('id', 'request id error, id : {}'.format(id))
 
@@ -585,12 +585,12 @@ def api_enabled_blog(request, *, id, status):
 
     blog.enabled = status
     blog.updated_at = time.time()
-    yield from blog.update()
+    await blog.update()
     return blog
 
 '''-----------comments-----------'''
 @post('/api/blogs/{id}/comments')
-def api_create_blog_comments(request, *, id, content):
+async def api_create_blog_comments(request, *, id, content):
     '''create blog comments'''
     if not request.__user__:
         raise APIPermissionError('please login first.')
@@ -598,39 +598,39 @@ def api_create_blog_comments(request, *, id, content):
     if not content or not content.strip():
         raise APIValueError('content', 'content can not be empty.')
 
-    blog = yield from Blog.find(id)
+    blog = await Blog.find(id)
     if blog is None:
         raise APIResourceNotFoundError('blog', 'can not find blog, id :{}'.format(id))
 
     comment = Comment(blog_id = id, user_id= request.__user__.id, user_name = request.__user__.name, user_image = request.__user__.image, content = content.strip() )
-    yield from comment.save()
+    await comment.save()
     return comment
 
 @get('/api/comments')
-def api_comments(request, *, page = '1'):
+async def api_comments(request, *, page = '1'):
     '''get all comments.'''
     check_admin(request)
     page_index = get_page_index(page)
-    num = yield from Comment.find_number('count(id)')
+    num = await Comment.find_number('count(id)')
     p = Page(num, page_index)
     if num == 0:
         return dict(page = p, comments = ())
-    comments = yield from Comment.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
+    comments = await Comment.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
     return dict(page = p, comments = comments)
 
 @post('/api/comments/{comment_id}/delete')
-def api_delete_comments(request, *, comment_id):
+async def api_delete_comments(request, *, comment_id):
     '''delete comment.'''
     check_admin(request)
-    comment = yield from Comment.find(comment_id)
+    comment = await Comment.find(comment_id)
     if comment is None:
         raise APIResourceNotFoundError('Comment', 'can not find comment, comment id: {}'.format(comment_id))
-    yield from comment.remove()
+    await comment.remove()
     return comment
 
 '''-----------comments_anonymous-----------'''
 @post('/api/blogs/{blog_id}/comments_anonymous')
-def api_create_blog_comments_anonymous(request, *, parent_id, blog_id, target_name, content, name, email, website):
+async def api_create_blog_comments_anonymous(request, *, parent_id, blog_id, target_name, content, name, email, website):
     '''create blog comments anonymous'''
     #if not request.__user__:
     #    raise APIPermissionError('please login first.')
@@ -642,89 +642,89 @@ def api_create_blog_comments_anonymous(request, *, parent_id, blog_id, target_na
     #if not email or not email.strip():
     #   raise APIValueError('email', 'email can not be empty.')
 
-    blog = yield from Blog.find(blog_id)
+    blog = await Blog.find(blog_id)
     if blog is None:
         raise APIResourceNotFoundError('blog', 'can not find blog, id :{}'.format(id))
 
     avatar = 'http://www.gravatar.com/avatar/{}?d=identicon&s=120'.format(hashlib.md5(name.encode('utf-8')).hexdigest())
 
     comment_anonymous = CommentAnonymous(parent_id = parent_id, blog_id = blog_id, target_name = target_name, content = content.strip(), name = name.strip(), email = email.strip(), website = website.strip(), avatar = avatar, ip = get_ip(request) )
-    yield from comment_anonymous.save()
+    await comment_anonymous.save()
     return comment_anonymous
 
 @get('/api/comments_anonymous')
-def api_comments_anonymous(request, *, page = '1'):
+async def api_comments_anonymous(request, *, page = '1'):
     '''get all comments.'''
     check_admin(request)
     page_index = get_page_index(page)
-    num = yield from CommentAnonymous.find_number('count(id)')
+    num = await CommentAnonymous.find_number('count(id)')
     p = Page(num, page_index)
     if num == 0:
         return dict(page = p, comments = ())
-    comments = yield from CommentAnonymous.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
+    comments = await CommentAnonymous.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
     return dict(page = p, comments = comments)
 
 @post('/api/comments_anonymous/{comment_anonymous_id}/delete')
-def api_delete_comments_anonymous(request, *, comment_anonymous_id):
+async def api_delete_comments_anonymous(request, *, comment_anonymous_id):
     '''delete comment.'''
     check_admin(request)
-    comment = yield from CommentAnonymous.find(comment_anonymous_id)
+    comment = await CommentAnonymous.find(comment_anonymous_id)
     if comment is None:
         raise APIResourceNotFoundError('Comment', 'can not find comment, comment id: {}'.format(comment_anonymous_id))
-    yield from comment.remove()
+    await comment.remove()
     return comment
 
 '''-----------categories-----------'''
 @get('/api/categories')
-def api_categories(*, page = '1'):
+async def api_categories(*, page = '1'):
     '''get all categories.'''
     page_index = get_page_index(page)
-    num = yield from Category.find_number('count(id)')
+    num = await Category.find_number('count(id)')
     p = Page(num, page_index)
     if num == 0:
         return dict(page = p, categories = ())
-    categories = yield from Category.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
+    categories = await Category.find_all(order_by = 'created_at desc', limit = (p.offset, p.limit))
     return dict(page = p, categories = categories)
 
 @post('/api/categories')
-def api_create_category(request, *, name):
+async def api_create_category(request, *, name):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
     category = Category(name = name)
-    yield from category.save()
+    await category.save()
     return category
 
 @get('/api/categories/{id}')
-def api_get_category(request, *, id):
-    category = yield from Category.find(id)
+async def api_get_category(request, *, id):
+    category = await Category.find(id)
     return category
 
 @post('/api/categories/{id}')
-def api_edit_category(request, *, id, name):
+async def api_edit_category(request, *, id, name):
     check_admin(request)
     if not name or not name.strip():
         raise APIValueError('name', 'name can not be empty')
-    
-    category = yield from Category.find(id)
+
+    category = await Category.find(id)
     if not category:
         raise APIValueError('category', 'category can not be find, id:{}'.format(id))
     category.name = name
-    yield from category.update()
+    await category.update()
     return category
 
 @post('/api/categories/{id}/delete')
-def api_delete_category(request, *, id):
+async def api_delete_category(request, *, id):
     logger.info('delete category id: {}'.format(id))
     check_admin(request)
-    category = yield from Category.find(id)
+    category = await Category.find(id)
     if category:
-        yield from category.remove()
+        await category.remove()
         return category
     raise APIValueError('id', 'id can not find...')
 
 @post('/api/modify_password')
-def api_modify_password(request, *, password0, password1):
+async def api_modify_password(request, *, password0, password1):
     #check_admin(request)
     if request.__user__ is None:
         raise APIPermissionError('You must login first!')
@@ -733,7 +733,7 @@ def api_modify_password(request, *, password0, password1):
     if not password1 or not _RE_SHA256.match(password1):
         raise APIValueError('password1', 'Invalid new password.')
 
-    user = yield from User.find(request.__user__.id)
+    user = await User.find(request.__user__.id)
     if user is None:
         raise APIResourceNotFoundError('User not found')
 
@@ -746,7 +746,7 @@ def api_modify_password(request, *, password0, password1):
     sha1_password1 = '{}:{}'.format(user.id, password1)
     user.password = hashlib.sha1(sha1_password1.encode('utf-8')).hexdigest()
     user.updated_at = time.time()
-    yield from user.update()
+    await user.update()
 
     return dict(user_id=user.id)
 '''

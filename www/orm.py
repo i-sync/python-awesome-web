@@ -8,11 +8,10 @@ import asyncio
 __pool = None
 
 
-@asyncio.coroutine
-def create_pool(loop, **kw):
+async def create_pool(loop, **kw):
     logger.info('Create database connection pool...{}'.format(str(kw)))
     global __pool
-    __pool = yield from aiomysql.create_pool(
+    __pool = await aiomysql.create_pool(
         host=kw.get('host', 'localhost'),
         port=kw.get('port', 3306),
         user=kw['user'],
@@ -26,49 +25,46 @@ def create_pool(loop, **kw):
     )
 
 
-@asyncio.coroutine
-def destory_pool():
+async def destory_pool():
     global __pool
     if __pool is not None:
         __pool.close()
-        yield from __pool.wait_closed()
+        await __pool.wait_closed()
 
 
-@asyncio.coroutine
-def select(sql, args, size=None):
+async def select(sql, args, size=None):
     logger.info('SQL:{}\tARGS:{}'.format(sql, args))
     global __pool
-    with (yield from __pool) as conn:
-        cur = yield from conn.cursor(aiomysql.DictCursor)
-        yield from cur.execute(sql.replace('?', '%s'), args or ())
+    with (await __pool) as conn:
+        cur = await conn.cursor(aiomysql.DictCursor)
+        await cur.execute(sql.replace('?', '%s'), args or ())
         if size:
-            rs = yield from cur.fetchmany(size)
+            rs = await cur.fetchmany(size)
         else:
-            rs = yield from cur.fetchall()
-        yield from cur.close()
+            rs = await cur.fetchall()
+        await cur.close()
         logger.info('rows returned: {}'.format(len(rs)))
         return rs
 
 
-@asyncio.coroutine
-def execute(sql, args, autocommit=True):
+async def execute(sql, args, autocommit=True):
     logger.info(sql)
     global __pool
-    with (yield from __pool) as conn:
+    with (await __pool) as conn:
         if not autocommit:
-            yield from conn.begin()
+            await conn.begin()
         try:
-            cur = yield from conn.cursor()
-            yield from cur.execute(sql.replace('?', '%s'), args)
+            cur = await conn.cursor()
+            await cur.execute(sql.replace('?', '%s'), args)
             affected = cur.rowcount
             lastrowid = cur.lastrowid
-            yield from cur.close()
+            await cur.close()
 
             if not autocommit:
-                yield from conn.commit()
+                await conn.commit()
         except BaseException as e:
             if not autocommit:
-                yield from conn.rollback()
+                await conn.rollback()
             raise
         return affected, lastrowid
 
@@ -197,17 +193,15 @@ class Model(dict, metaclass=ModelMetaclass):
         return value
 
     @classmethod
-    @asyncio.coroutine
-    def find(cls, pk):
+    async def find(cls, pk):
         ''' find object by primary key '''
-        rs = yield from select('{} where `{}`=?'.format(cls.__select__, cls.__primary_key__), [pk], 1)
+        rs = await select('{} where `{}`=?'.format(cls.__select__, cls.__primary_key__), [pk], 1)
         if len(rs) == 0:
             return None
         return cls(**rs[0])
 
     @classmethod
-    @asyncio.coroutine
-    def find_all(cls, where=None, args=None, **kwargs):
+    async def find_all(cls, where=None, args=None, **kwargs):
         ''' find objects by where clause. '''
 
         sql = [cls.__select__]
@@ -235,44 +229,40 @@ class Model(dict, metaclass=ModelMetaclass):
             else:
                 raise ValueError('Invalid limit value: {}'.format(str(limit)))
 
-        rs = yield from select(' '.join(sql), args)
+        rs = await select(' '.join(sql), args)
 
         return [cls(**r) for r in rs]
 
     @classmethod
-    @asyncio.coroutine
-    def find_number(cls, select_field, where=None, args=None):
+    async def find_number(cls, select_field, where=None, args=None):
         ''' find number by select and where. '''
         sql = ['select {} _num_ from `{}`'.format(select_field, cls.__table__)]
 
         if where:
             sql.append('where')
             sql.append(where)
-        rs = yield from select(' '.join(sql), args, 1)
+        rs = await select(' '.join(sql), args, 1)
         if len(rs) == 0:
             return None
         return rs[0]['_num_']
 
-    @asyncio.coroutine
-    def save(self):
+    async def save(self):
         args = list(map(self.get_value_or_default, self.__fields__))
         args.append(self.get_value_or_default(self.__primary_key__))
-        rows, lastrowid = yield from execute(self.__insert__, args)
+        rows, lastrowid = await execute(self.__insert__, args)
         if rows != 1:
             logger.warning('Failed to insert record: affected rows: {}'.format(rows))
         return rows, lastrowid
 
-    @asyncio.coroutine
-    def update(self):
+    async def update(self):
         args = list(map(self.get_value, self.__fields__))
         args.append(self.get_value(self.__primary_key__))
-        rows, _ = yield from execute(self.__update__, args)
+        rows, _ = await execute(self.__update__, args)
         if rows != 1:
             logger.warning('Failed to update by primary key: affected rows: {}'.format(rows))
 
-    @asyncio.coroutine
-    def remove(self):
+    async def remove(self):
         args = [self.get_value(self.__primary_key__)]
-        rows, _ = yield from execute(self.__delete__, args)
+        rows, _ = await execute(self.__delete__, args)
         if rows != 1:
             logger.warning('Failed to remove by primary key: affected rows: {}'.format(rows))

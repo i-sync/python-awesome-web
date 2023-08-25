@@ -38,52 +38,51 @@ def init_jinja2(app, **kwargs):
             env.filters[name] = f
     app['__templating__'] = env
 
-@asyncio.coroutine
-def logger_factory(app, handler):
-    @asyncio.coroutine
-    def inner_logger(request):
+
+async def logger_factory(app, handler):
+
+    async def inner_logger(request):
         logger.info('Request: {} {}'.format(request.method, request.path))
         # await asyncio.sleep(0.3)
-        return (yield from handler(request))
+        return await handler(request)
     return inner_logger
 
-@asyncio.coroutine
-def data_factory(app, handler):
-    @asyncio.coroutine
-    def parse_data(request):
+
+async def data_factory(app, handler):
+
+    async def parse_data(request):
         if request.method == 'POST':
             if request.content_type.startswith('application/json'):
-                request.__data__ = yield from request.json()
+                request.__data__ = await request.json()
                 logger.info('request json: {}'.format(str(request.__data__)))
             elif request.content_type.startswith('application/x-www-form-urlencoded'):
-                request.__data__ = yield from request.post()
+                request.__data__ = await request.post()
                 logger.info('request form: {}'.format(str(request.__data__)))
-        return (yield from handler(request))
+        return await handler(request)
     return parse_data
 
-@asyncio.coroutine
-def auth_factory(app, handler):
-    @asyncio.coroutine
-    def auth(request):
+
+async def auth_factory(app, handler):
+    async def auth(request):
         logger.info('check user: {} {}'.format(request.method, request.path))
         request.__user__ = None
         cookie_str = request.cookies.get(COOKIE_NAME)
         if cookie_str:
-            user = yield from cookie2user(cookie_str)
+            user = await cookie2user(cookie_str)
             if user:
                 logger.info('set current user: {}'.format(user.email))
                 request.__user__ = user
         if request.path.startswith('/manage/') and (request.__user__ is None or not request.__user__.admin):
             return web.HTTPFound('/signin')
-        return (yield from handler(request))
+        return await handler(request)
     return auth
 
-@asyncio.coroutine
-def response_factory(app, handler):
-    @asyncio.coroutine
-    def response(request):
+
+async def response_factory(app, handler):
+
+    async def response(request):
         logger.info('Response handler...')
-        r = yield from handler(request)
+        r = await handler(request)
         if isinstance(r, web.StreamResponse):
             return r
         if isinstance(r, bytes):
@@ -105,7 +104,7 @@ def response_factory(app, handler):
             else:
                 r['__user__'] = request.__user__
                 r['web_meta'] = configs.web_meta
-                r['categories'] = yield from get_categories()
+                r['categories'] = await get_categories()
                 res = web.Response(body = app['__templating__'].get_template(template).render(**r).encode('utf-8'))
                 res.content_type = 'text/html;charset=utf-8'
                 return res
@@ -146,21 +145,25 @@ def ensure_http(url):
 #def index(request):
     #return web.Response(body=b'<h1>Awesome Python3 Web</h1>', content_type='text/html')
 
-@asyncio.coroutine
-def init(loop):
+async def init(loop):
     #app = web.Application(loop = loop, host = '127.0.0.1', port = 3306, user = 'root', password = '123', database = 'awesome')
     logger.info(configs.database)
-    yield from orm.create_pool(loop = loop, **configs.database)
-    app = web.Application(loop = loop, middlewares = [
+    await orm.create_pool(loop = loop, **configs.database)
+    app = web.Application(middlewares = [
         logger_factory, auth_factory, response_factory
     ])
     init_jinja2(app, filters = dict(datetime = datetime_filter, ensure_http = ensure_http))
     add_routes(app, 'handlers')
     add_static(app)
     #app.router.add_route('GET', '/', index)
-    srv = yield from loop.create_server(app.make_handler(), 'localhost', 9000)
+    #srv = await loop.create_server(app.make_handler(), '0.0.0.0', 8200)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, '0.0.0.0', 8200)
     logger.info('Server started at http://127.0.0.1:9000...')
-    return srv
+    await site.start()
+
+    #return srv
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(init(loop))
