@@ -1,4 +1,4 @@
-aiohttp
+aiohttp=3.8.5
 aiomysql
 asyncio
 Jinja2
