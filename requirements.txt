@@ -4,3 +4,4 @@ asyncio
 Jinja2
 markdown2
 requests
+cryptography
