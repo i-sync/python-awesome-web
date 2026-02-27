@@ -79,5 +79,47 @@ cat backups/awesome_blog_<TS>.dump | docker compose exec -T postgres pg_restore 
 5. Start app: `docker compose up -d --build app`.
 6. Verify: `./ops/healthcheck.sh http://127.0.0.1:9000/`.
 
+## Nginx Reverse Proxy (Production Example)
+Use a generic server block first (no domain hardcoded), then replace `server_name _;` later if needed.
+
+```nginx
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name _;
+
+    # Optional: serve static files directly from Nginx
+    location /static/ {
+        alias /var/www/python-awesome-web/app/static/;
+        access_log off;
+        expires 7d;
+    }
+
+    # Keep sitemap dynamic (do not treat as static file)
+    location = /sitemap.xml {
+        proxy_pass http://127.0.0.1:9000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:9000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+Apply and verify:
+```bash
+nginx -t && sudo systemctl reload nginx
+curl -I http://127.0.0.1:9000/sitemap.xml
+curl -I http://127.0.0.1/sitemap.xml
+```
+
 ## Legacy Note
 Legacy MySQL migration tooling was removed after cutover. Keep old MySQL dumps offline for archival recovery only.
