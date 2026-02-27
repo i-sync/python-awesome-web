@@ -1,2 +1,0 @@
--r requirements.txt
-aiomysql>=0.2,<1
