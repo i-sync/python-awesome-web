@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 from aiohttp import web
 
@@ -10,6 +11,8 @@ from app.logger import logger
 from app.services.render import markdown_to_html
 
 from app.handlers.common import COLORS, COOKIE_NAME, get_page_index, parse_tag_id
+
+STATIC_DIR = Path(__file__).resolve().parents[1] / 'static'
 
 
 @get('/')
@@ -80,6 +83,15 @@ async def get_blog(id):
 @get('/test')
 def test(request):
     return web.Response(body=b'<h1>Awesome Python3 Web</h1>', content_type='text/html')
+
+@get('/robots.txt')
+def robots_txt():
+    return web.FileResponse(path=STATIC_DIR / 'robots.txt')
+
+
+@get('/ads.txt')
+def ads_txt():
+    return web.FileResponse(path=STATIC_DIR / 'ads.txt')
 
 
 @get('/register')

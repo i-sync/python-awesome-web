@@ -1,6 +1,6 @@
 # python-awesome-web
 
-A lightweight blog app on `aiohttp` + PostgreSQL, refactored into a layered `app/` package while keeping `www/` as a compatibility entrypoint.
+A lightweight blog app on `aiohttp` + PostgreSQL, organized under the `app/` package.
 
 ## Runtime Overview
 - App container: `python-awesome-web-app`
@@ -14,7 +14,8 @@ A lightweight blog app on `aiohttp` + PostgreSQL, refactored into a layered `app
 - `app/db/orm.py`: SQLAlchemy async compatibility ORM.
 - `app/db/models.py`: model definitions.
 - `app/services/`: shared business helpers.
-- `www/`: legacy import/entry wrappers (`python3 www/app.py` still works).
+- `app/templates/`, `app/static/`, `app/config/`: templates, frontend assets, and runtime config.
+- `scripts/generate_sitemap.py`: regenerate `sitemap.xml`.
 - `conf/database.postgresql.sql`: schema bootstrap SQL.
 - `ops/`: backup/restore/health-check scripts.
 
@@ -34,6 +35,11 @@ docker compose logs --tail=100 postgres
 Local run (venv):
 ```bash
 python3 -m app.main
+```
+
+Regenerate sitemap:
+```bash
+python3 scripts/generate_sitemap.py
 ```
 
 Slow network build:

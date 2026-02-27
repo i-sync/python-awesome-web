@@ -10,15 +10,15 @@ Primary code now lives in `app/`:
   - `common.py`: shared auth/cookie/paging helpers.
 - `app/db/orm.py` + `app/db/models.py`: SQLAlchemy async compatibility ORM and models.
 - `app/services/`: reusable logic (for example markdown rendering).
-
-Legacy compatibility wrappers remain in `www/` (`www/app.py`, `www/handlers.py`, etc.) so old commands/imports keep working. Templates and static assets stay under `www/templates/` and `www/static/`.
+- `app/templates/`, `app/static/`, `app/config/`: templates, frontend assets, and runtime config.
+- `scripts/`: operational developer scripts (`generate_sitemap.py`, `pymonitor.py`).
 
 ## Build, Test, and Development Commands
 - `python3 -m venv .venv && source .venv/bin/activate`: create local virtualenv.
 - `pip install -r requirements.txt`: install runtime deps.
 - `python3 -m app.main`: run app locally on `9000`.
-- `python3 www/app.py`: legacy-compatible startup path.
-- `python3 www/generate_sitemap.py`: regenerate sitemap.
+- `python3 scripts/generate_sitemap.py`: regenerate sitemap.
+- `python3 scripts/pymonitor.py -m app.main`: optional auto-restart runner.
 - `docker compose up -d postgres app`: run full stack.
 - `docker compose logs --tail=100 app`: inspect runtime errors.
 
@@ -46,5 +46,5 @@ PRs should include:
 - linked issue/task if applicable.
 
 ## Security & Operations Notes
-Do not commit real secrets in `www/config/user.json`. Use env vars (`DATABASE_DSN`, `DB_*`, `PG*`) for deployment overrides.
+Do not commit real secrets in `app/config/user.json`. Use env vars (`DATABASE_DSN`, `DB_*`, `PG*`) for deployment overrides.
 Use `ops/backup.sh`, `ops/restore.sh`, and weekly cron retention for PostgreSQL operations.

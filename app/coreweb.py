@@ -186,7 +186,7 @@ async def build_response(app, request, result):
 
 
 def add_static(app):
-    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'www', 'static')
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
     app.router.add_static('/static/', path)
     logger.info('add static {} = {}'.format('/static/', path))
 

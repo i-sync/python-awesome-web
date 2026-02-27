@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
 # coding=UTF-8
 import asyncio
 from datetime import datetime
-from config import configs
-import orm
+from pathlib import Path
+
+from app.config import configs
+from app.db import orm
 
 async def generate_sitemap():
     await orm.create_pool(**configs.database)
@@ -34,7 +37,8 @@ async def generate_sitemap():
         sitemap = sitemap + '''
     </urlset>'''
 
-        with open("./sitemap.xml", "w+", encoding="utf-8") as f:
+        output = Path(__file__).resolve().parents[1] / 'sitemap.xml'
+        with open(output, "w+", encoding="utf-8") as f:
             f.writelines(sitemap)
     finally:
         await orm.destroy_pool()

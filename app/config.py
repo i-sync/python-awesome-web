@@ -52,7 +52,7 @@ def _load_json(path):
         return json.load(fp)
 
 
-_default_config_dir = Path(__file__).resolve().parents[1] / 'www' / 'config'
+_default_config_dir = Path(__file__).resolve().parent / 'config'
 config_dir = Path(os.getenv('APP_CONFIG_DIR', str(_default_config_dir)))
 
 configs = _load_json(config_dir / 'config.json')

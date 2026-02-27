@@ -2,6 +2,7 @@
 # _*_ coding: utf-8 _*_
 
 import os
+from pathlib import Path
 import time
 from datetime import datetime
 
@@ -27,7 +28,7 @@ def init_jinja2(app, **kwargs):
     )
     path = kwargs.get('path', None)
     if path is None:
-        path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'www', 'templates')
+        path = str(Path(__file__).resolve().parent / 'templates')
     logger.info('set jinja2 template path: {}'.format(path))
     env = Environment(loader=FileSystemLoader(path), **options)
     filters = kwargs.get('filters', None)
