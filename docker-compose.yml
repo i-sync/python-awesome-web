@@ -1,0 +1,42 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    environment:
+      APP_HOST: "0.0.0.0"
+      APP_PORT: "9000"
+      DATABASE_DSN: "postgresql://awesome:awesome@postgres:5432/awesome_blog"
+      DATABASE_ENGINE: "postgresql"
+    ports:
+      - "9000:9000"
+    volumes:
+      - ./log:/app/log
+      - ./temp:/app/temp
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: "awesome_blog"
+      POSTGRES_USER: "awesome"
+      POSTGRES_PASSWORD: "awesome"
+    ports:
+      - "55432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./conf/database.postgresql.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U awesome -d awesome_blog"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

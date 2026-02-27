@@ -2,71 +2,118 @@
 # _*_ coding: utf-8 _*_
 
 from logger import logger
-import aiomysql
-import asyncio
+import asyncpg
 
 __pool = None
 
 
-async def create_pool(loop, **kw):
-    logger.info('Create database connection pool...{}'.format(str(kw)))
+def _build_dsn(**kw):
+    dsn = kw.get('dsn')
+    if dsn:
+        return dsn
+
+    user = kw.get('user')
+    password = kw.get('password', '')
+    host = kw.get('host', 'localhost')
+    port = kw.get('port', 5432)
+    database = kw.get('database')
+
+    if user and database:
+        return 'postgresql://{}:{}@{}:{}/{}'.format(user, password, host, port, database)
+
+    raise ValueError('Missing database connection settings, provide dsn or host/user/password/database.')
+
+
+def _replace_placeholders(sql):
+    parts = sql.split('?')
+    if len(parts) == 1:
+        return sql
+
+    query = [parts[0]]
+    for i, part in enumerate(parts[1:], start=1):
+        query.append('${}'.format(i))
+        query.append(part)
+    return ''.join(query)
+
+
+def _parse_affected(command_tag):
+    try:
+        return int(command_tag.strip().split()[-1])
+    except (ValueError, AttributeError, IndexError):
+        return 0
+
+
+async def create_pool(loop=None, **kw):
+    logger.info('Create PostgreSQL connection pool...{}'.format(str(kw)))
+    engine = str(kw.get('engine', 'postgresql')).lower()
+    if engine not in ('postgres', 'postgresql'):
+        raise ValueError('Unsupported database engine: {}. Only postgresql is supported.'.format(engine))
     global __pool
-    __pool = await aiomysql.create_pool(
-        host=kw.get('host', 'localhost'),
-        port=kw.get('port', 3306),
-        user=kw['user'],
-        password=kw['password'],
-        db=kw['database'],
-        charset=kw.get('charset', 'utf8'),
-        autocommit=kw.get('autocommit', True),
-        maxsize=kw.get('maxsize', 10),
-        minsize=kw.get('minsize', 1),
-        loop=loop
+    __pool = await asyncpg.create_pool(
+        dsn=_build_dsn(**kw),
+        min_size=kw.get('minsize', 1),
+        max_size=kw.get('maxsize', 10),
     )
 
 
-async def destory_pool():
+async def destroy_pool():
     global __pool
     if __pool is not None:
-        __pool.close()
-        await __pool.wait_closed()
+        await __pool.close()
+        __pool = None
+
+
+async def destory_pool():
+    await destroy_pool()
 
 
 async def select(sql, args, size=None):
     logger.info('SQL:{}\tARGS:{}'.format(sql, args))
     global __pool
-    with (await __pool) as conn:
-        cur = await conn.cursor(aiomysql.DictCursor)
-        await cur.execute(sql.replace('?', '%s'), args or ())
-        if size:
-            rs = await cur.fetchmany(size)
+    query = _replace_placeholders(sql)
+    async with __pool.acquire() as conn:
+        if size == 1:
+            row = await conn.fetchrow(query, *(args or ()))
+            rs = [dict(row)] if row else []
         else:
-            rs = await cur.fetchall()
-        await cur.close()
+            rows = await conn.fetch(query, *(args or ()))
+            rs = [dict(row) for row in rows]
+            if size:
+                rs = rs[:size]
         logger.info('rows returned: {}'.format(len(rs)))
         return rs
 
 
-async def execute(sql, args, autocommit=True):
+async def execute(sql, args, autocommit=True, fetch_row=False):
     logger.info(sql)
     global __pool
-    with (await __pool) as conn:
-        if not autocommit:
-            await conn.begin()
+    query = _replace_placeholders(sql)
+    async with __pool.acquire() as conn:
         try:
-            cur = await conn.cursor()
-            await cur.execute(sql.replace('?', '%s'), args)
-            affected = cur.rowcount
-            lastrowid = cur.lastrowid
-            await cur.close()
+            if autocommit:
+                if fetch_row:
+                    row = await conn.fetchrow(query, *(args or ()))
+                    return (1 if row else 0), (dict(row) if row else None)
+                command_tag = await conn.execute(query, *(args or ()))
+                return _parse_affected(command_tag), None
 
+            transaction = conn.transaction()
+            await transaction.start()
+            if fetch_row:
+                row = await conn.fetchrow(query, *(args or ()))
+                affected = 1 if row else 0
+                value = dict(row) if row else None
+            else:
+                command_tag = await conn.execute(query, *(args or ()))
+                affected = _parse_affected(command_tag)
+                value = None
             if not autocommit:
-                await conn.commit()
+                await transaction.commit()
+            return affected, value
         except BaseException as e:
             if not autocommit:
-                await conn.rollback()
+                await transaction.rollback()
             raise
-        return affected, lastrowid
 
 
 def create_args_string(num):
@@ -148,19 +195,37 @@ class ModelMetaclass(type):
         for k in mappings.keys():
             attrs.pop(k)
 
-        escaped_fields = list(map(lambda f: '`{}`'.format(f), fields))
+        def _column_name(key):
+            return mappings.get(key).name or key
+
+        escaped_fields = list(map(lambda f: '"{}"'.format(_column_name(f)), fields))
+        primary_key_column = _column_name(primary_key)
         attrs['__mappings__'] = mappings
         attrs['__table__'] = table_name
         attrs['__primary_key__'] = primary_key
+        attrs['__primary_key_column__'] = primary_key_column
         attrs['__fields__'] = fields
 
-        attrs['__select__'] = 'select `{}`, {} from `{}`'.format(primary_key, ', '.join(escaped_fields), table_name)
-        attrs['__insert__'] = 'insert into `{}` ({}, `{}`) values ({})'.format(table_name, ', '.join(escaped_fields),
-                                                                               primary_key, create_args_string(
-                len(escaped_fields) + 1))
-        attrs['__update__'] = 'update `{}` set {} where `{}` = ?'.format(table_name, ', '.join(
-            map(lambda f: '`{}`=?'.format(mappings.get(f).name or f), fields)), primary_key)
-        attrs['__delete__'] = 'delete from `{}` where `{}`=?'.format(table_name, primary_key)
+        attrs['__select__'] = 'select "{}", {} from "{}"'.format(primary_key_column, ', '.join(escaped_fields), table_name)
+        attrs['__insert__'] = 'insert into "{}" ({}, "{}") values ({})'.format(
+            table_name,
+            ', '.join(escaped_fields),
+            primary_key_column,
+            create_args_string(len(escaped_fields) + 1),
+        )
+        attrs['__insert_returning__'] = '{} returning "{}"'.format(attrs['__insert__'], primary_key_column)
+        attrs['__insert_without_pk__'] = 'insert into "{}" ({}) values ({})'.format(
+            table_name,
+            ', '.join(escaped_fields),
+            create_args_string(len(escaped_fields)),
+        )
+        attrs['__insert_without_pk_returning__'] = '{} returning "{}"'.format(
+            attrs['__insert_without_pk__'],
+            primary_key_column,
+        )
+        attrs['__update__'] = 'update "{}" set {} where "{}" = ?'.format(table_name, ', '.join(
+            map(lambda f: '"{}"=?'.format(_column_name(f)), fields)), primary_key_column)
+        attrs['__delete__'] = 'delete from "{}" where "{}"=?'.format(table_name, primary_key_column)
 
         return type.__new__(cls, name, bases, attrs)
 
@@ -195,7 +260,7 @@ class Model(dict, metaclass=ModelMetaclass):
     @classmethod
     async def find(cls, pk):
         ''' find object by primary key '''
-        rs = await select('{} where `{}`=?'.format(cls.__select__, cls.__primary_key__), [pk], 1)
+        rs = await select('{} where "{}"=?'.format(cls.__select__, cls.__primary_key_column__), [pk], 1)
         if len(rs) == 0:
             return None
         return cls(**rs[0])
@@ -224,8 +289,9 @@ class Model(dict, metaclass=ModelMetaclass):
                 sql.append('?')
                 args.append(limit)
             elif isinstance(limit, tuple) and len(limit) == 2:
-                sql.append('?, ?')
-                args.extend(limit)
+                offset, row_count = limit
+                sql.append('? offset ?')
+                args.extend([row_count, offset])
             else:
                 raise ValueError('Invalid limit value: {}'.format(str(limit)))
 
@@ -236,7 +302,7 @@ class Model(dict, metaclass=ModelMetaclass):
     @classmethod
     async def find_number(cls, select_field, where=None, args=None):
         ''' find number by select and where. '''
-        sql = ['select {} _num_ from `{}`'.format(select_field, cls.__table__)]
+        sql = ['select {} as _num_ from "{}"'.format(select_field, cls.__table__)]
 
         if where:
             sql.append('where')
@@ -247,12 +313,21 @@ class Model(dict, metaclass=ModelMetaclass):
         return rs[0]['_num_']
 
     async def save(self):
-        args = list(map(self.get_value_or_default, self.__fields__))
-        args.append(self.get_value_or_default(self.__primary_key__))
-        rows, lastrowid = await execute(self.__insert__, args)
+        field_values = list(map(self.get_value_or_default, self.__fields__))
+        primary_key_value = self.get_value_or_default(self.__primary_key__)
+        if primary_key_value is None:
+            rows, row = await execute(self.__insert_without_pk_returning__, field_values, fetch_row=True)
+        else:
+            args = list(field_values)
+            args.append(primary_key_value)
+            rows, row = await execute(self.__insert_returning__, args, fetch_row=True)
         if rows != 1:
             logger.warning('Failed to insert record: affected rows: {}'.format(rows))
-        return rows, lastrowid
+        primary_key = self.__primary_key_column__
+        inserted_id = None if row is None else row.get(primary_key)
+        if inserted_id is not None:
+            setattr(self, self.__primary_key__, inserted_id)
+        return rows, inserted_id
 
     async def update(self):
         args = list(map(self.get_value, self.__fields__))

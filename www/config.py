@@ -6,6 +6,7 @@ config.py
 '''
 
 #import config_default
+import os
 import os.path
 import json
 
@@ -39,6 +40,9 @@ def merge(defaults, override):
                 r[k] = override[k]
         else:
             r[k] = v
+    for k, v in override.items():
+        if k not in r:
+            r[k] = v
 
     return r
 
@@ -60,5 +64,41 @@ with open('{}/user.json'.format(path), encoding='utf-8') as f:
     user = json.load(f)
 
 configs = merge(configs, user)
+
+database = configs.get('database', {})
+
+env_engine = os.getenv('DATABASE_ENGINE')
+if env_engine:
+    database['engine'] = env_engine
+
+env_dsn = os.getenv('DATABASE_DSN')
+if env_dsn:
+    database['dsn'] = env_dsn
+    database['engine'] = 'postgresql'
+
+env_mapping = {
+    'DB_HOST': 'host',
+    'DB_PORT': 'port',
+    'DB_USER': 'user',
+    'DB_PASSWORD': 'password',
+    'DB_NAME': 'database',
+    'PGHOST': 'host',
+    'PGPORT': 'port',
+    'PGUSER': 'user',
+    'PGPASSWORD': 'password',
+    'PGDATABASE': 'database',
+}
+for env_name, config_key in env_mapping.items():
+    value = os.getenv(env_name)
+    if value is None:
+        continue
+    if config_key == 'port':
+        try:
+            value = int(value)
+        except ValueError:
+            continue
+    database[config_key] = value
+
+configs['database'] = database
 
 configs = toDict(configs)

@@ -6,6 +6,7 @@ import os
 import asyncio
 import inspect
 import functools
+import json
 from urllib import parse
 from aiohttp import web
 from apis import APIError
@@ -18,12 +19,9 @@ def get(path):
     :return:
     '''
     def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-        wrapper.__method__ = 'GET'
-        wrapper.__route__ = path
-        return wrapper
+        func.__method__ = 'GET'
+        func.__route__ = path
+        return func
     return decorator
 
 def post(path):
@@ -33,12 +31,9 @@ def post(path):
     :return:
     '''
     def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            return func(*args, **kwargs)
-        wrapper.__method__ = 'POST'
-        wrapper.__route__ = path
-        return wrapper
+        func.__method__ = 'POST'
+        func.__route__ = path
+        return func
     return decorator
 
 def get_required_kw_args(fn):
@@ -145,9 +140,47 @@ class RequestHandler(object):
         logger.info('call with args: {}'.format(str(kw)))
         try:
             r = await self._func(**kw)
-            return r
+            return await build_response(self._app, request, r)
         except APIError as e:
-            return dict(error = e.error, data = e.data, message = e.message)
+            return await build_response(self._app, request, dict(error=e.error, data=e.data, message=e.message))
+
+
+async def build_response(app, request, result):
+    if isinstance(result, web.StreamResponse):
+        return result
+    if isinstance(result, bytes):
+        return web.Response(body=result, content_type='application/octet-stream')
+    if isinstance(result, str):
+        if result.startswith('redirect:'):
+            return web.HTTPFound(result[9:])
+        return web.Response(body=result.encode('utf-8'), content_type='text/html', charset='utf-8')
+    if isinstance(result, dict):
+        template = result.get('__template__')
+        if template is None:
+            return web.Response(
+                body=json.dumps(result, ensure_ascii=False, default=lambda o: o.__dict__).encode('utf-8'),
+                content_type='application/json',
+                charset='utf-8',
+            )
+        # Lazy import avoids circular imports during module loading.
+        from config import configs
+        from handlers import get_categories
+
+        result['__user__'] = getattr(request, '__user__', None)
+        result['web_meta'] = configs.web_meta
+        result['categories'] = await get_categories()
+        return web.Response(
+            body=app['__templating__'].get_template(template).render(**result).encode('utf-8'),
+            content_type='text/html',
+            charset='utf-8',
+        )
+    if isinstance(result, int) and 100 <= result < 600:
+        return web.Response(status=result)
+    if isinstance(result, tuple) and len(result) == 2:
+        status, message = result
+        if isinstance(status, int) and 100 <= status < 600:
+            return web.Response(status=status, text=str(message))
+    return web.Response(body=str(result).encode('utf-8'), content_type='text/plain', charset='utf-8')
 
 def add_static(app):
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
@@ -159,8 +192,16 @@ def add_route(app, fn):
     path = getattr(fn, '__route__', None)
     if path is None or method is None:
         raise ValueError('@Get or @Post not defined in {}.'.format(str(fn)))
-    if not asyncio.iscoroutinefunction(fn) and not inspect.isgeneratorfunction(fn):
-        fn = asyncio.coroutine(fn)
+    if not asyncio.iscoroutinefunction(fn):
+        original_fn = fn
+
+        @functools.wraps(original_fn)
+        async def wrapped(*args, **kwargs):
+            result = original_fn(*args, **kwargs)
+            if inspect.isawaitable(result):
+                return await result
+            return result
+        fn = wrapped
     logger.info('add route {} {} => {}({})'.format(method, path, fn.__name__, ', '.join(inspect.signature(fn).parameters.keys())))
     app.router.add_route(method, path, RequestHandler(app, fn))
 

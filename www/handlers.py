@@ -5,7 +5,7 @@
 Url Handlers
 '''
 from logger import logger
-import re, time, json, hashlib, base64, asyncio
+import re, time, json, hashlib
 import markdown2
 
 from apis import APIValueError, APIError, APIResourceNotFoundError, APIPermissionError, Page
@@ -39,6 +39,20 @@ def get_page_index(page_str):
     if p < 1:
         p = 1
     return p
+
+
+def parse_tag_id(tag_id):
+    if isinstance(tag_id, int):
+        return tag_id
+    if tag_id is None:
+        return None
+    value = str(tag_id).strip()
+    if not value:
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
 
 def user2cookie(user, max_age):
     '''
@@ -113,8 +127,7 @@ def get_ip(request):
 
 '''
 @get('/')
-@asyncio.coroutine
-def index(request):
+async def index(request):
     users = await User.find_all()
     return {
         '__template__': 'test.html',
@@ -156,7 +169,7 @@ async def index(*, page = '1'):
             tags = []
             if blog.tags:
                 for tag_id in blog.tags.split(","):
-                    tag = await Tags.find(tag_id)
+                    tag = await Tags.find(parse_tag_id(tag_id))
                     if tag:
                         tags.append({"key": tag.id, "value": tag.name, "color": COLORS[tag.id%len(COLORS)]})
             blog.tags = tags
@@ -184,7 +197,7 @@ async def get_blog(id):
     tags = []
     if blog.tags:
         for tag_id in blog.tags.split(","):
-            tag = await Tags.find(tag_id)
+            tag = await Tags.find(parse_tag_id(tag_id))
             if tag:
                 tags.append({"key": tag.id, "value": tag.name, "color": COLORS[tag.id%len(COLORS)]})
 
@@ -260,7 +273,7 @@ async def get_category_blogs(request, *, id, page='1'):
             tags = []
             if blog.tags:
                 for tag_id in blog.tags.split(","):
-                    tag = await Tags.find(tag_id)
+                    tag = await Tags.find(parse_tag_id(tag_id))
                     if tag:
                         tags.append({"key": tag.id, "value": tag.name, "color": COLORS[tag.id%len(COLORS)]})
             blog.tags = tags
@@ -430,6 +443,8 @@ async def authenticate(*, email, password, remember):
         raise APIValueError('password', 'Invalid Password.')
     # authenticate ok, set cookie
     r = web.Response()
+    if isinstance(remember, str):
+        remember = remember.strip().lower() in ('true', '1', 'yes', 'on')
     if remember:
         max_age = configs.cookie.max_age_long
     else:
@@ -448,7 +463,7 @@ async def api_get_blog(*, id):
     tags = []
     if blog.tags:
         for tag_id in blog.tags.split(","):
-            tag = await Tags.find(tag_id)
+            tag = await Tags.find(parse_tag_id(tag_id))
             if tag:
                 tags.append({"key": tag.id, "value": tag.name})
 
@@ -489,7 +504,7 @@ async def api_create_blog(request, *, name, description, summary, content, categ
     if len(tags) > 0:
         for tag in tags:
             if tag["key"]:
-                rs = await Tags.find(tag["key"])
+                rs = await Tags.find(parse_tag_id(tag["key"]))
                 if rs:
                     tag_ids.append(rs.id)
             else:
@@ -498,8 +513,8 @@ async def api_create_blog(request, *, name, description, summary, content, categ
                     tag_ids.append(rs[0].id)
                 else: #create new tag
                     tag = Tags(name=tag["value"])
-                    rows, lastrowid = await tag.save()
-                    tag_ids.append(lastrowid)
+                    _, tag_id = await tag.save()
+                    tag_ids.append(tag_id)
 
     blog = Blog(user_id = request.__user__.id,
                 user_name= request.__user__.name,
@@ -550,7 +565,7 @@ async def api_edit_blog(request, *, id, name, description, summary, content, cat
     if len(tags) > 0:
         for tag in tags:
             if tag["key"]:
-                rs = await Tags.find(tag["key"])
+                rs = await Tags.find(parse_tag_id(tag["key"]))
                 if rs:
                     tag_ids.append(rs.id)
             else:
@@ -559,8 +574,8 @@ async def api_edit_blog(request, *, id, name, description, summary, content, cat
                     tag_ids.append(rs[0].id)
                 else: #create new tag
                     tag = Tags(name=tag["value"])
-                    rows, lastrowid = await tag.save()
-                    tag_ids.append(lastrowid)
+                    _, tag_id = await tag.save()
+                    tag_ids.append(tag_id)
 
     blog.name = name
     blog.description = description
@@ -580,8 +595,16 @@ async def api_enabled_blog(request, *, id, status):
     if not blog:
         raise APIValueError('id', 'request id error, id : {}'.format(id))
 
-    if isinstance(status, str) and status.isalpha():
-        status = int(status.lower() == 'true')
+    if isinstance(status, str):
+        value = status.strip().lower()
+        if value in ('true', '1', 'yes', 'on'):
+            status = True
+        elif value in ('false', '0', 'no', 'off'):
+            status = False
+        else:
+            status = bool(value)
+    else:
+        status = bool(status)
 
     blog.enabled = status
     blog.updated_at = time.time()

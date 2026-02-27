@@ -8,8 +8,19 @@
     "base_url": "https://www.viagle.cn",
     "use_disqus": false,
     "anonymous_comment": true
-   },
+  },
   "database":{
+    "engine": "postgresql",
+    "dsn": "postgresql://awesome:awesome@localhost:5432/awesome_blog",
+    "host":"localhost",
+    "port": 5432,
+    "user": "awesome",
+    "password": "awesome",
+    "database": "awesome_blog",
+    "minsize": 1,
+    "maxsize": 10
+  },
+  "mysql_source":{
     "host":"localhost",
     "port": 3306,
     "user": "root",
