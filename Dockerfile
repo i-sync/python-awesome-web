@@ -18,4 +18,4 @@ RUN mkdir -p /app/log /app/temp
 
 EXPOSE 9000
 
-CMD ["python3", "www/app.py"]
+CMD ["python3", "-m", "app.main"]

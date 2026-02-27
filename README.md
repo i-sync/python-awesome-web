@@ -1,12 +1,22 @@
 # python-awesome-web
 
-Lightweight blog app running on Python 3.11 + aiohttp 3.9 + PostgreSQL.
+A lightweight blog app on `aiohttp` + PostgreSQL, refactored into a layered `app/` package while keeping `www/` as a compatibility entrypoint.
 
 ## Runtime Overview
 - App container: `python-awesome-web-app`
 - DB container: `postgres:16-alpine`
 - App URL: `http://127.0.0.1:9000/`
-- PostgreSQL host port: `55432` (mapped to container `5432`)
+- PostgreSQL host port: `55432` -> container `5432`
+
+## Project Layout
+- `app/main.py`: application bootstrap, middlewares, route registration.
+- `app/handlers/`: route handlers split by domain (`public.py`, `manage.py`, `api.py`).
+- `app/db/orm.py`: SQLAlchemy async compatibility ORM.
+- `app/db/models.py`: model definitions.
+- `app/services/`: shared business helpers.
+- `www/`: legacy import/entry wrappers (`python3 www/app.py` still works).
+- `conf/database.postgresql.sql`: schema bootstrap SQL.
+- `ops/`: backup/restore/health-check scripts.
 
 ## Daily Commands
 Start services:
@@ -21,77 +31,42 @@ docker compose logs --tail=100 app
 docker compose logs --tail=100 postgres
 ```
 
-Build with slow network mirror:
+Local run (venv):
+```bash
+python3 -m app.main
+```
+
+Slow network build:
 ```bash
 PIP_INDEX_URL=https://pypi.tuna.tsinghua.edu.cn/simple docker compose build --no-cache app
 ```
 
-## Deploy to a New Server (PostgreSQL -> PostgreSQL)
-Use this when moving to a new machine.
-
-1. On old server, export dump:
+## PostgreSQL Backup / Restore
+Use provided scripts:
 ```bash
-mkdir -p /var/backups/python-awesome-web
-TS=$(date +%F_%H%M%S)
-docker compose exec -T postgres pg_dump -U awesome -d awesome_blog -Fc \
-  > /var/backups/python-awesome-web/awesome_blog_${TS}.dump
+./ops/backup.sh
+./ops/restore.sh /var/backups/python-awesome-web/awesome_blog_<TS>.dump
 ```
 
-2. Copy code + dump to new server.
-
-3. On new server, start PostgreSQL:
-```bash
-docker compose up -d postgres
-```
-
-4. Restore data:
-```bash
-cat /var/backups/python-awesome-web/awesome_blog_<TS>.dump | \
-docker compose exec -T postgres pg_restore -U awesome -d awesome_blog \
-  --clean --if-exists --no-owner --no-privileges
-```
-
-5. Start app:
-```bash
-docker compose up -d --build app
-```
-
-6. Verify:
-```bash
-curl --noproxy '*' -I http://127.0.0.1:9000/
-```
-
-## PostgreSQL Backup and Restore
-One-off backup:
+Manual equivalents:
 ```bash
 docker compose exec -T postgres pg_dump -U awesome -d awesome_blog -Fc > backups/awesome_blog_$(date +%F_%H%M%S).dump
-```
-
-Restore from dump:
-```bash
 cat backups/awesome_blog_<TS>.dump | docker compose exec -T postgres pg_restore -U awesome -d awesome_blog --clean --if-exists --no-owner --no-privileges
 ```
 
-## Weekly Scheduled Backup (crontab)
-Create backup directory:
+## Weekly Backup (crontab)
 ```bash
-mkdir -p /var/backups/python-awesome-web
-```
-
-Open crontab:
-```bash
-crontab -e
-```
-
-Add weekly backup at Sunday 03:00:
-```bash
-0 4 * * 0 cd /var/www/python-awesome-web && docker compose exec -T postgres pg_dump -U awesome -d awesome_blog -Fc > /var/backups/python-awesome-web/awesome_blog_$(date +\%F_\%H\%M).dump 2>>/var/log/python-awesome-web-backup.log
-```
-
-Optional retention (delete backups older than 90 days):
-```bash
+0 4 * * 0 cd /var/www/python-awesome-web && ./ops/backup.sh >> /var/log/python-awesome-web-backup.log 2>&1
 30 4 * * 0 find /var/backups/python-awesome-web -name '*.dump' -mtime +90 -delete
 ```
 
+## New Server Migration (PostgreSQL -> PostgreSQL)
+1. On old server: run `./ops/backup.sh`.
+2. Copy code + dump to new server.
+3. Start DB: `docker compose up -d postgres`.
+4. Restore dump with `./ops/restore.sh <dump_file>`.
+5. Start app: `docker compose up -d --build app`.
+6. Verify: `./ops/healthcheck.sh http://127.0.0.1:9000/`.
+
 ## Legacy Note
-MySQL migration tooling has been removed from this repo after cutover. Keep old MySQL dump files offline for archival recovery only.
+Legacy MySQL migration tooling was removed after cutover. Keep old MySQL dumps offline for archival recovery only.
