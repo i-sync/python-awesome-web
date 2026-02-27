@@ -9,6 +9,7 @@ from app.config import configs
 from app.coreweb import get, post
 from app.db.models import Blog, Category, Comment, CommentAnonymous, Tags, User, next_id
 from app.logger import logger
+from app.services.sitemap import invalidate_sitemap_cache
 
 from app.handlers.common import (
     COOKIE_NAME,
@@ -169,6 +170,7 @@ async def api_create_blog(request, *, name, description, summary, content, categ
         tags=','.join([str(tag_id) for tag_id in tag_ids]),
     )
     await blog.save()
+    invalidate_sitemap_cache()
     return blog
 
 
@@ -179,6 +181,7 @@ async def api_delete_blog(request, *, id):
     blog = await Blog.find(id)
     if blog:
         await blog.remove()
+        invalidate_sitemap_cache()
         return blog
     raise APIValueError('id', 'id can not find...')
 
@@ -229,6 +232,7 @@ async def api_edit_blog(request, *, id, name, description, summary, content, cat
     blog.tags = ','.join([str(tag_id) for tag_id in tag_ids])
     blog.updated_at = time.time()
     await blog.update()
+    invalidate_sitemap_cache()
     return blog
 
 
@@ -253,6 +257,7 @@ async def api_enabled_blog(request, *, id, status):
     blog.enabled = status
     blog.updated_at = time.time()
     await blog.update()
+    invalidate_sitemap_cache()
     return blog
 
 

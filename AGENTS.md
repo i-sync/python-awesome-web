@@ -9,7 +9,7 @@ Primary code now lives in `app/`:
   - `api.py`: JSON API endpoints.
   - `common.py`: shared auth/cookie/paging helpers.
 - `app/db/orm.py` + `app/db/models.py`: SQLAlchemy async compatibility ORM and models.
-- `app/services/`: reusable logic (for example markdown rendering).
+- `app/services/`: reusable logic (for example markdown rendering and sitemap caching).
 - `app/templates/`, `app/static/`, `app/config/`: templates, frontend assets, and runtime config.
 - `scripts/`: operational developer scripts (`generate_sitemap.py`, `pymonitor.py`).
 
@@ -17,7 +17,8 @@ Primary code now lives in `app/`:
 - `python3 -m venv .venv && source .venv/bin/activate`: create local virtualenv.
 - `pip install -r requirements.txt`: install runtime deps.
 - `python3 -m app.main`: run app locally on `9000`.
-- `python3 scripts/generate_sitemap.py`: regenerate sitemap.
+- `curl -s http://127.0.0.1:9000/sitemap.xml`: check live sitemap endpoint.
+- `python3 scripts/generate_sitemap.py`: optional offline sitemap export.
 - `python3 scripts/pymonitor.py -m app.main`: optional auto-restart runner.
 - `docker compose up -d postgres app`: run full stack.
 - `docker compose logs --tail=100 app`: inspect runtime errors.

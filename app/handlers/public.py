@@ -9,6 +9,7 @@ from app.coreweb import get
 from app.db.models import Blog, Category, Comment, CommentAnonymous, Tags, User
 from app.logger import logger
 from app.services.render import markdown_to_html
+from app.services.sitemap import get_cached_sitemap_xml, resolve_sitemap_base_url
 
 from app.handlers.common import COLORS, COOKIE_NAME, get_page_index, parse_tag_id
 
@@ -92,6 +93,16 @@ def robots_txt():
 @get('/ads.txt')
 def ads_txt():
     return web.FileResponse(path=STATIC_DIR / 'ads.txt')
+
+@get('/sitemap.xml')
+async def sitemap_xml(request):
+    try:
+        base_url = resolve_sitemap_base_url(request)
+        xml = await get_cached_sitemap_xml(base_url)
+    except Exception as ex:
+        logger.exception(ex)
+        return web.Response(status=503, text='sitemap unavailable')
+    return web.Response(text=xml, content_type='application/xml', charset='utf-8')
 
 
 @get('/register')

@@ -13,9 +13,9 @@ A lightweight blog app on `aiohttp` + PostgreSQL, organized under the `app/` pac
 - `app/handlers/`: route handlers split by domain (`public.py`, `manage.py`, `api.py`).
 - `app/db/orm.py`: SQLAlchemy async compatibility ORM.
 - `app/db/models.py`: model definitions.
-- `app/services/`: shared business helpers.
+- `app/services/`: shared business helpers (including sitemap cache/renderer).
 - `app/templates/`, `app/static/`, `app/config/`: templates, frontend assets, and runtime config.
-- `scripts/generate_sitemap.py`: regenerate `sitemap.xml`.
+- `scripts/generate_sitemap.py`: optional offline sitemap export script.
 - `conf/database.postgresql.sql`: schema bootstrap SQL.
 - `ops/`: backup/restore/health-check scripts.
 
@@ -37,7 +37,12 @@ Local run (venv):
 python3 -m app.main
 ```
 
-Regenerate sitemap:
+Sitemap endpoint (auto-generated with cache):
+```bash
+curl -s http://127.0.0.1:9000/sitemap.xml
+```
+
+Optional offline sitemap export:
 ```bash
 python3 scripts/generate_sitemap.py
 ```
